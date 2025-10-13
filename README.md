@@ -144,5 +144,5 @@ This project is licensed under the MIT License. See the `LICENSE` file for detai
 ## 📬 Contact
 For questions, suggestions, or issues related to the code, please contact:
 
-Everton da Costa  
+Everton da Costa
 📧 everto.cost@gmail.com
