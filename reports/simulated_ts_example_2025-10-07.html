@@ -1,0 +1,1489 @@
+<!DOCTYPE html>
+
+<html>
+
+<head>
+
+<meta charset="utf-8" />
+<meta name="generator" content="pandoc" />
+<meta http-equiv="X-UA-Compatible" content="IE=EDGE" />
+
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+
+<meta name="author" content="Everton da Costa" />
+
+<meta name="date" content="2025-10-07" />
+
+<title>A Simulated Data Example: Addressing Numerical Instability in \beta\text{ARMA} Models</title>
+
+<script>// Pandoc 2.9 adds attributes on both header and div. We remove the former (to
+// be compatible with the behavior of Pandoc < 2.8).
+document.addEventListener('DOMContentLoaded', function(e) {
+  var hs = document.querySelectorAll("div.section[class*='level'] > :first-child");
+  var i, h, a;
+  for (i = 0; i < hs.length; i++) {
+    h = hs[i];
+    if (!/^h[1-6]$/i.test(h.tagName)) continue;  // it should be a header h1-h6
+    a = h.attributes;
+    while (a.length > 0) h.removeAttribute(a[0].name);
+  }
+});
+</script>
+
+<style type="text/css">
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+span.underline{text-decoration: underline;}
+div.column{display: inline-block; vertical-align: top; width: 50%;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+</style>
+
+
+
+<style type="text/css">
+code {
+white-space: pre;
+}
+.sourceCode {
+overflow: visible;
+}
+</style>
+<style type="text/css" data-origin="pandoc">
+html { -webkit-text-size-adjust: 100%; }
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+{ counter-reset: source-line 0; }
+pre.numberSource code > span
+{ position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+{ content: counter(source-line);
+position: relative; left: -1em; text-align: right; vertical-align: baseline;
+border: none; display: inline-block;
+-webkit-touch-callout: none; -webkit-user-select: none;
+-khtml-user-select: none; -moz-user-select: none;
+-ms-user-select: none; user-select: none;
+padding: 0 4px; width: 4em;
+color: #aaaaaa;
+}
+pre.numberSource { margin-left: 3em; border-left: 1px solid #aaaaaa; padding-left: 4px; }
+div.sourceCode
+{ }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+code span.al { color: #ff0000; font-weight: bold; } 
+code span.an { color: #60a0b0; font-weight: bold; font-style: italic; } 
+code span.at { color: #7d9029; } 
+code span.bn { color: #40a070; } 
+code span.bu { color: #008000; } 
+code span.cf { color: #007020; font-weight: bold; } 
+code span.ch { color: #4070a0; } 
+code span.cn { color: #880000; } 
+code span.co { color: #60a0b0; font-style: italic; } 
+code span.cv { color: #60a0b0; font-weight: bold; font-style: italic; } 
+code span.do { color: #ba2121; font-style: italic; } 
+code span.dt { color: #902000; } 
+code span.dv { color: #40a070; } 
+code span.er { color: #ff0000; font-weight: bold; } 
+code span.ex { } 
+code span.fl { color: #40a070; } 
+code span.fu { color: #06287e; } 
+code span.im { color: #008000; font-weight: bold; } 
+code span.in { color: #60a0b0; font-weight: bold; font-style: italic; } 
+code span.kw { color: #007020; font-weight: bold; } 
+code span.op { color: #666666; } 
+code span.ot { color: #007020; } 
+code span.pp { color: #bc7a00; } 
+code span.sc { color: #4070a0; } 
+code span.ss { color: #bb6688; } 
+code span.st { color: #4070a0; } 
+code span.va { color: #19177c; } 
+code span.vs { color: #4070a0; } 
+code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } 
+</style>
+<script>
+// apply pandoc div.sourceCode style to pre.sourceCode instead
+(function() {
+  var sheets = document.styleSheets;
+  for (var i = 0; i < sheets.length; i++) {
+    if (sheets[i].ownerNode.dataset["origin"] !== "pandoc") continue;
+    try { var rules = sheets[i].cssRules; } catch (e) { continue; }
+    var j = 0;
+    while (j < rules.length) {
+      var rule = rules[j];
+      // check if there is a div.sourceCode rule
+      if (rule.type !== rule.STYLE_RULE || rule.selectorText !== "div.sourceCode") {
+        j++;
+        continue;
+      }
+      var style = rule.style.cssText;
+      // check if color or background-color is set
+      if (rule.style.color === '' && rule.style.backgroundColor === '') {
+        j++;
+        continue;
+      }
+      // replace div.sourceCode by a pre.sourceCode rule
+      sheets[i].deleteRule(j);
+      sheets[i].insertRule('pre.sourceCode{' + style + '}', j);
+    }
+  }
+})();
+</script>
+
+
+
+
+<style type="text/css">body {
+background-color: #fff;
+margin: 1em auto;
+max-width: 700px;
+overflow: visible;
+padding-left: 2em;
+padding-right: 2em;
+font-family: "Open Sans", "Helvetica Neue", Helvetica, Arial, sans-serif;
+font-size: 14px;
+line-height: 1.35;
+}
+#TOC {
+clear: both;
+margin: 0 0 10px 10px;
+padding: 4px;
+width: 400px;
+border: 1px solid #CCCCCC;
+border-radius: 5px;
+background-color: #f6f6f6;
+font-size: 13px;
+line-height: 1.3;
+}
+#TOC .toctitle {
+font-weight: bold;
+font-size: 15px;
+margin-left: 5px;
+}
+#TOC ul {
+padding-left: 40px;
+margin-left: -1.5em;
+margin-top: 5px;
+margin-bottom: 5px;
+}
+#TOC ul ul {
+margin-left: -2em;
+}
+#TOC li {
+line-height: 16px;
+}
+table {
+margin: 1em auto;
+border-width: 1px;
+border-color: #DDDDDD;
+border-style: outset;
+border-collapse: collapse;
+}
+table th {
+border-width: 2px;
+padding: 5px;
+border-style: inset;
+}
+table td {
+border-width: 1px;
+border-style: inset;
+line-height: 18px;
+padding: 5px 5px;
+}
+table, table th, table td {
+border-left-style: none;
+border-right-style: none;
+}
+table thead, table tr.even {
+background-color: #f7f7f7;
+}
+p {
+margin: 0.5em 0;
+}
+blockquote {
+background-color: #f6f6f6;
+padding: 0.25em 0.75em;
+}
+hr {
+border-style: solid;
+border: none;
+border-top: 1px solid #777;
+margin: 28px 0;
+}
+dl {
+margin-left: 0;
+}
+dl dd {
+margin-bottom: 13px;
+margin-left: 13px;
+}
+dl dt {
+font-weight: bold;
+}
+ul {
+margin-top: 0;
+}
+ul li {
+list-style: circle outside;
+}
+ul ul {
+margin-bottom: 0;
+}
+pre, code {
+background-color: #f7f7f7;
+border-radius: 3px;
+color: #333;
+white-space: pre-wrap; 
+}
+pre {
+border-radius: 3px;
+margin: 5px 0px 10px 0px;
+padding: 10px;
+}
+pre:not([class]) {
+background-color: #f7f7f7;
+}
+code {
+font-family: Consolas, Monaco, 'Courier New', monospace;
+font-size: 85%;
+}
+p > code, li > code {
+padding: 2px 0px;
+}
+div.figure {
+text-align: center;
+}
+img {
+background-color: #FFFFFF;
+padding: 2px;
+border: 1px solid #DDDDDD;
+border-radius: 3px;
+border: 1px solid #CCCCCC;
+margin: 0 5px;
+}
+h1 {
+margin-top: 0;
+font-size: 35px;
+line-height: 40px;
+}
+h2 {
+border-bottom: 4px solid #f7f7f7;
+padding-top: 10px;
+padding-bottom: 2px;
+font-size: 145%;
+}
+h3 {
+border-bottom: 2px solid #f7f7f7;
+padding-top: 10px;
+font-size: 120%;
+}
+h4 {
+border-bottom: 1px solid #f7f7f7;
+margin-left: 8px;
+font-size: 105%;
+}
+h5, h6 {
+border-bottom: 1px solid #ccc;
+font-size: 105%;
+}
+a {
+color: #0033dd;
+text-decoration: none;
+}
+a:hover {
+color: #6666ff; }
+a:visited {
+color: #800080; }
+a:visited:hover {
+color: #BB00BB; }
+a[href^="http:"] {
+text-decoration: underline; }
+a[href^="https:"] {
+text-decoration: underline; }
+
+code > span.kw { color: #555; font-weight: bold; } 
+code > span.dt { color: #902000; } 
+code > span.dv { color: #40a070; } 
+code > span.bn { color: #d14; } 
+code > span.fl { color: #d14; } 
+code > span.ch { color: #d14; } 
+code > span.st { color: #d14; } 
+code > span.co { color: #888888; font-style: italic; } 
+code > span.ot { color: #007020; } 
+code > span.al { color: #ff0000; font-weight: bold; } 
+code > span.fu { color: #900; font-weight: bold; } 
+code > span.er { color: #a61717; background-color: #e3d2d2; } 
+</style>
+
+
+
+
+</head>
+
+<body>
+
+
+
+
+<h1 class="title toc-ignore">A Simulated Data Example: Addressing
+Numerical Instability in <span class="math inline">\(\beta\text{ARMA}\)</span> Models</h1>
+<h3 class="subtitle">Reproducing the CMLE and PCMLE from Cribari-Neto,
+Costa, &amp; Fonseca (2025)</h3>
+<h4 class="author">Everton da Costa</h4>
+<h4 class="date">2025-10-07</h4>
+
+
+
+<div id="example-with-simulated-time-series" class="section level1">
+<h1>Example with simulated time series</h1>
+<div id="introduction" class="section level2">
+<h2>Introduction</h2>
+<p>This vignette reproduces a key simulation study from Cribari-Neto,
+Costa, &amp; Fonseca (2025). We demonstrate a common numerical
+instability issue that arises when fitting beta autoregressive moving
+average (<span class="math inline">\(\beta\text{ARMA}\)</span>) models.
+Specifically, we will fit a <span class="math inline">\(\beta\text{ARMA(1,4)}\)</span> model to data
+generated from a <span class="math inline">\(\beta\text{AR(1)}\)</span>
+process. This example corresponds to the results shown in Table 1
+(unpenalized estimation) and Table 3 (penalized estimation) of the
+paper. We first show how standard optimization methods can fail to
+converge or produce implausible estimates and then demonstrate how the
+proposed ridge penalization provides a more stable and accurate
+solution.</p>
+<p><strong>Key Reference:</strong> Cribari-Neto, F., Costa, E., &amp;
+Fonseca, R. V. (2025). Numerical stability enhancements in beta
+autoregressive moving average model estimation.</p>
+</div>
+<div id="simulated-data-and-model-setup" class="section level2">
+<h2>Simulated Data and Model Setup</h2>
+<p>We begin by loading the R packages required for this simulation,
+including tools for time series analysis (<code>forecast</code>), data
+handling (<code>dplyr</code>), and plotting (<code>ggplot2</code>).</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" tabindex="-1"></a><span class="fu">library</span>(BarmaRidgeBJPS2025)</span>
+<span id="cb1-2"><a href="#cb1-2" tabindex="-1"></a><span class="fu">library</span>(forecast) <span class="co"># time series</span></span>
+<span id="cb1-3"><a href="#cb1-3" tabindex="-1"></a><span class="fu">library</span>(ggplot2) <span class="co"># plotting</span></span>
+<span id="cb1-4"><a href="#cb1-4" tabindex="-1"></a><span class="fu">library</span>(dplyr) <span class="co"># data manipulation</span></span></code></pre></div>
+<div id="functions" class="section level3">
+<h3>Functions</h3>
+<p>To demonstrate the package’s internal mechanics for this vignette, we
+access several non-exported functions using the <code>:::</code>
+operator. This makes them easier to call and inspect in the following
+examples.</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" tabindex="-1"></a><span class="co"># -----------------------------------------------------------------------------</span></span>
+<span id="cb2-2"><a href="#cb2-2" tabindex="-1"></a><span class="co"># Core functions for the standard ARMA model</span></span>
+<span id="cb2-3"><a href="#cb2-3" tabindex="-1"></a><span class="co"># -----------------------------------------------------------------------------</span></span>
+<span id="cb2-4"><a href="#cb2-4" tabindex="-1"></a>start_values <span class="ot">&lt;-</span> BarmaRidgeBJPS2025<span class="sc">:::</span>start_values</span>
+<span id="cb2-5"><a href="#cb2-5" tabindex="-1"></a>loglik_arma <span class="ot">&lt;-</span> BarmaRidgeBJPS2025<span class="sc">:::</span>loglik_arma</span>
+<span id="cb2-6"><a href="#cb2-6" tabindex="-1"></a>score_vector_arma <span class="ot">&lt;-</span> BarmaRidgeBJPS2025<span class="sc">:::</span>score_vector_arma</span>
+<span id="cb2-7"><a href="#cb2-7" tabindex="-1"></a>inf_matrix_arma <span class="ot">&lt;-</span> BarmaRidgeBJPS2025<span class="sc">:::</span>inf_matrix_arma</span>
+<span id="cb2-8"><a href="#cb2-8" tabindex="-1"></a></span>
+<span id="cb2-9"><a href="#cb2-9" tabindex="-1"></a><span class="co"># -----------------------------------------------------------------------------</span></span>
+<span id="cb2-10"><a href="#cb2-10" tabindex="-1"></a><span class="co"># Corresponding functions for the ridge-penalized (L2) model</span></span>
+<span id="cb2-11"><a href="#cb2-11" tabindex="-1"></a><span class="co"># -----------------------------------------------------------------------------</span></span>
+<span id="cb2-12"><a href="#cb2-12" tabindex="-1"></a>loglik_arma_ridge <span class="ot">&lt;-</span> BarmaRidgeBJPS2025<span class="sc">:::</span>loglik_arma_ridge</span>
+<span id="cb2-13"><a href="#cb2-13" tabindex="-1"></a>score_vector_arma_ridge <span class="ot">&lt;-</span> BarmaRidgeBJPS2025<span class="sc">:::</span>score_vector_arma_ridge</span>
+<span id="cb2-14"><a href="#cb2-14" tabindex="-1"></a></span>
+<span id="cb2-15"><a href="#cb2-15" tabindex="-1"></a><span class="co"># -----------------------------------------------------------------------------</span></span>
+<span id="cb2-16"><a href="#cb2-16" tabindex="-1"></a><span class="co"># Utility function for creating link structures</span></span>
+<span id="cb2-17"><a href="#cb2-17" tabindex="-1"></a><span class="co"># -----------------------------------------------------------------------------</span></span>
+<span id="cb2-18"><a href="#cb2-18" tabindex="-1"></a>make_link_structure <span class="ot">&lt;-</span> BarmaRidgeBJPS2025<span class="sc">:::</span>make_link_structure</span></code></pre></div>
+</div>
+<div id="specification" class="section level3">
+<h3>Specification</h3>
+<p>This chunk configures all parameters for our simulation. We define
+the model structure (link function, <span class="math inline">\(\beta\text{ARMA}\)</span> order) and the true
+parameter values used to generate the synthetic time series data.</p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" tabindex="-1"></a><span class="co"># --------------------------------------------------------------------------- #</span></span>
+<span id="cb3-2"><a href="#cb3-2" tabindex="-1"></a><span class="co"># 1. Link Function Setup</span></span>
+<span id="cb3-3"><a href="#cb3-3" tabindex="-1"></a><span class="co"># --------------------------------------------------------------------------- #</span></span>
+<span id="cb3-4"><a href="#cb3-4" tabindex="-1"></a><span class="co"># We&#39;ll use a logit link for the conditional mean of the beta distribution.</span></span>
+<span id="cb3-5"><a href="#cb3-5" tabindex="-1"></a>link <span class="ot">&lt;-</span> <span class="st">&quot;logit&quot;</span></span>
+<span id="cb3-6"><a href="#cb3-6" tabindex="-1"></a>link_structure <span class="ot">&lt;-</span> <span class="fu">make_link_structure</span>(link)</span>
+<span id="cb3-7"><a href="#cb3-7" tabindex="-1"></a></span>
+<span id="cb3-8"><a href="#cb3-8" tabindex="-1"></a><span class="co"># Extract the link function, its inverse, and the derivative of the inverse.</span></span>
+<span id="cb3-9"><a href="#cb3-9" tabindex="-1"></a>linkfun <span class="ot">&lt;-</span> link_structure<span class="sc">$</span>linkfun</span>
+<span id="cb3-10"><a href="#cb3-10" tabindex="-1"></a>linkinv <span class="ot">&lt;-</span> link_structure<span class="sc">$</span>linkinv</span>
+<span id="cb3-11"><a href="#cb3-11" tabindex="-1"></a>mu.eta <span class="ot">&lt;-</span> link_structure<span class="sc">$</span>mu.eta</span>
+<span id="cb3-12"><a href="#cb3-12" tabindex="-1"></a></span>
+<span id="cb3-13"><a href="#cb3-13" tabindex="-1"></a><span class="co"># --------------------------------------------------------------------------- #</span></span>
+<span id="cb3-14"><a href="#cb3-14" tabindex="-1"></a><span class="co"># 2. Model Specification</span></span>
+<span id="cb3-15"><a href="#cb3-15" tabindex="-1"></a><span class="co"># --------------------------------------------------------------------------- #</span></span>
+<span id="cb3-16"><a href="#cb3-16" tabindex="-1"></a><span class="co"># Define the ARMA(p, q) order for the model we intend to fit.</span></span>
+<span id="cb3-17"><a href="#cb3-17" tabindex="-1"></a>ar_vec <span class="ot">&lt;-</span> <span class="dv">1</span> <span class="co"># p = 1</span></span>
+<span id="cb3-18"><a href="#cb3-18" tabindex="-1"></a>ma_vec <span class="ot">&lt;-</span> <span class="dv">1</span><span class="sc">:</span><span class="dv">4</span> <span class="co"># q = 4</span></span>
+<span id="cb3-19"><a href="#cb3-19" tabindex="-1"></a></span>
+<span id="cb3-20"><a href="#cb3-20" tabindex="-1"></a><span class="co"># --------------------------------------------------------------------------- #</span></span>
+<span id="cb3-21"><a href="#cb3-21" tabindex="-1"></a><span class="co"># 3. Data Generation Parameters</span></span>
+<span id="cb3-22"><a href="#cb3-22" tabindex="-1"></a><span class="co"># --------------------------------------------------------------------------- #</span></span>
+<span id="cb3-23"><a href="#cb3-23" tabindex="-1"></a><span class="co"># Set a seed for reproducibility of the data simulation.</span></span>
+<span id="cb3-24"><a href="#cb3-24" tabindex="-1"></a>seed <span class="ot">&lt;-</span> <span class="dv">34</span></span>
+<span id="cb3-25"><a href="#cb3-25" tabindex="-1"></a></span>
+<span id="cb3-26"><a href="#cb3-26" tabindex="-1"></a><span class="co"># Define the sample sizes.</span></span>
+<span id="cb3-27"><a href="#cb3-27" tabindex="-1"></a>n <span class="ot">&lt;-</span> <span class="dv">250</span> <span class="co"># Final sample size after burn-in</span></span>
+<span id="cb3-28"><a href="#cb3-28" tabindex="-1"></a>burn <span class="ot">&lt;-</span> <span class="dv">1000</span> <span class="co"># Observations to discard (burn-in period)</span></span>
+<span id="cb3-29"><a href="#cb3-29" tabindex="-1"></a>nburn <span class="ot">&lt;-</span> n <span class="sc">+</span> burn <span class="co"># Total observations to generate</span></span>
+<span id="cb3-30"><a href="#cb3-30" tabindex="-1"></a></span>
+<span id="cb3-31"><a href="#cb3-31" tabindex="-1"></a><span class="co"># Set the true parameter values for the data generating process.</span></span>
+<span id="cb3-32"><a href="#cb3-32" tabindex="-1"></a><span class="co"># Note: The true model is a BARMA(1,0), which will be fitted using BARMA(1,4)</span></span>
+<span id="cb3-33"><a href="#cb3-33" tabindex="-1"></a><span class="co"># model.</span></span>
+<span id="cb3-34"><a href="#cb3-34" tabindex="-1"></a>varphi_true <span class="ot">&lt;-</span> <span class="fl">0.4</span> <span class="co"># AR(1) coefficient</span></span>
+<span id="cb3-35"><a href="#cb3-35" tabindex="-1"></a>theta_true <span class="ot">&lt;-</span> <span class="cn">NA</span> <span class="co"># No MA terms in the true model</span></span>
+<span id="cb3-36"><a href="#cb3-36" tabindex="-1"></a>alpha_true <span class="ot">&lt;-</span> <span class="dv">0</span> <span class="co"># Intercept for the linear predictor</span></span>
+<span id="cb3-37"><a href="#cb3-37" tabindex="-1"></a>phi_true <span class="ot">&lt;-</span> <span class="dv">20</span> <span class="co"># Precision parameter for the Beta distribution</span></span></code></pre></div>
+</div>
+<div id="time-series" class="section level3">
+<h3>Time Series</h3>
+<p>The initial <code>burn</code> observations are discarded as a burn-in
+period. This helps mitigate the influence of initial conditions and
+ensures the simulated series has reached its stationary
+distribution.</p>
+<div class="sourceCode" id="cb4"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" tabindex="-1"></a><span class="co"># Set the seed to ensure the data simulation is reproducible.</span></span>
+<span id="cb4-2"><a href="#cb4-2" tabindex="-1"></a><span class="fu">set.seed</span>(seed)</span>
+<span id="cb4-3"><a href="#cb4-3" tabindex="-1"></a></span>
+<span id="cb4-4"><a href="#cb4-4" tabindex="-1"></a><span class="co"># Simulate a BARMA time series using the true parameters defined previously.</span></span>
+<span id="cb4-5"><a href="#cb4-5" tabindex="-1"></a>y_burn <span class="ot">&lt;-</span> <span class="fu">simu_barma</span>(</span>
+<span id="cb4-6"><a href="#cb4-6" tabindex="-1"></a>  <span class="at">n =</span> nburn,</span>
+<span id="cb4-7"><a href="#cb4-7" tabindex="-1"></a>  <span class="at">varphi =</span> varphi_true,</span>
+<span id="cb4-8"><a href="#cb4-8" tabindex="-1"></a>  <span class="at">theta =</span> theta_true,</span>
+<span id="cb4-9"><a href="#cb4-9" tabindex="-1"></a>  <span class="at">alpha =</span> alpha_true,</span>
+<span id="cb4-10"><a href="#cb4-10" tabindex="-1"></a>  <span class="at">phi =</span> phi_true</span>
+<span id="cb4-11"><a href="#cb4-11" tabindex="-1"></a>)</span>
+<span id="cb4-12"><a href="#cb4-12" tabindex="-1"></a></span>
+<span id="cb4-13"><a href="#cb4-13" tabindex="-1"></a><span class="co"># Discard the burn-in period and create the final time series object.</span></span>
+<span id="cb4-14"><a href="#cb4-14" tabindex="-1"></a><span class="co"># We assume monthly data, so we set the frequency to 12.</span></span>
+<span id="cb4-15"><a href="#cb4-15" tabindex="-1"></a>final_indices <span class="ot">&lt;-</span> (burn <span class="sc">+</span> <span class="dv">1</span>)<span class="sc">:</span>nburn</span>
+<span id="cb4-16"><a href="#cb4-16" tabindex="-1"></a>y <span class="ot">&lt;-</span> <span class="fu">ts</span>(y_burn[final_indices], <span class="at">frequency =</span> <span class="dv">12</span>)</span></code></pre></div>
+<p>Time series plot</p>
+<div class="sourceCode" id="cb5"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" tabindex="-1"></a><span class="co"># First, convert the time series object into a tibble for plotting.</span></span>
+<span id="cb5-2"><a href="#cb5-2" tabindex="-1"></a>df <span class="ot">&lt;-</span> <span class="fu">tibble</span>(<span class="at">time =</span> <span class="dv">1</span><span class="sc">:</span><span class="fu">length</span>(y), <span class="at">value =</span> y)</span>
+<span id="cb5-3"><a href="#cb5-3" tabindex="-1"></a></span>
+<span id="cb5-4"><a href="#cb5-4" tabindex="-1"></a><span class="co"># Now, create the line plot of the simulated data.</span></span>
+<span id="cb5-5"><a href="#cb5-5" tabindex="-1"></a><span class="fu">ggplot</span>(df, <span class="fu">aes</span>(<span class="at">x =</span> time, <span class="at">y =</span> value)) <span class="sc">+</span></span>
+<span id="cb5-6"><a href="#cb5-6" tabindex="-1"></a>  <span class="fu">geom_line</span>() <span class="sc">+</span></span>
+<span id="cb5-7"><a href="#cb5-7" tabindex="-1"></a>  <span class="fu">labs</span>(</span>
+<span id="cb5-8"><a href="#cb5-8" tabindex="-1"></a>    <span class="at">x =</span> <span class="st">&quot;Time&quot;</span>,</span>
+<span id="cb5-9"><a href="#cb5-9" tabindex="-1"></a>    <span class="at">y =</span> <span class="st">&quot;&quot;</span>,</span>
+<span id="cb5-10"><a href="#cb5-10" tabindex="-1"></a>    <span class="at">title =</span> <span class="st">&quot; &quot;</span></span>
+<span id="cb5-11"><a href="#cb5-11" tabindex="-1"></a>  ) <span class="sc">+</span></span>
+<span id="cb5-12"><a href="#cb5-12" tabindex="-1"></a>  <span class="fu">scale_y_continuous</span>(<span class="at">limits =</span> <span class="fu">c</span>(<span class="dv">0</span>, <span class="dv">1</span>), <span class="at">breaks =</span> <span class="fu">seq</span>(<span class="dv">0</span>, <span class="dv">1</span>, <span class="fl">0.20</span>))</span></code></pre></div>
+<p><img role="img" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAqAAAAFQCAIAAADvJFsWAAAACXBIWXMAAA7DAAAOwwHHb6hkAAAgAElEQVR4nOydeZwbxZn3q9VS65ZGGs19+Bjb2Nj4whDsxCaGgLED4Ux2gRDAEAIbkvAGyCYQyLGBzeZYjpBNAiGEI1kgEAgQzBXAHowxBmx8nzNjzymNRhrdt/r948nUNn2pNaOZ0cjP9w9/ZKmnu7q7qn71PPXUUwzP8wRBEARBkMpCN9kFQBAEQRCk9KDAIwiCIEgFggKPIAiCIBUICjyCIAiCVCAo8AiCIAhSgaDAIwiCIEgFggKPIAiCIBUICjyCIAiCVCAo8AiCIAhSgaDAIwiCIEgFggKPIAiCIBUICjyCIAiCVCAo8AiCIAhSgaDAIwiCIEgFggKPIAiCIBUICjyCIAiCVCAo8AiCIAhSgaDAIwiCIEgFggKPIAiCIBUICjyCIAiCVCAo8AiCIAhSgaDAIwiCIEgFggKPIAiCIBUICjyCIAiCVCAo8AiCIAhSgaDAIwiCIEgFggKPIAiCIBUICjyCIAiCVCAo8AiCIAhSgaDAIwiCIEgFggKPIAiCIBWIfrILII/f7y/Jecxms8ViGRoaKsnZxhWHwxEOhye7FAVgWdblcoVCoUwmM9llKYDdbo9GozzPT3ZBCuByudLpdCwWm+yCFMBoNBJCUqnUZBekAFarleO4YDA42QUpAMMwNpstEolMdkEKYDAYnE5nMBjM5XKTXZYCTIkulBDi8XhisVgikSjhOTmOczgc0u/RgkcQBEGQCgQFHkEQBEEqEBR4BEEQBKlAUOARBEEQpAJBgUcQBEGQCgQFHkEQBEEqkHFaJpfp3vpBbvHy6UbR93xw+59//cg/DoSMrcsv/fq1qxrLdJkegiAIgkxtxsWCT3W/9shvXj2YFC9B5mNb//jAe3Xr73nkt7csOfaH377uK/dFygiCIAgyNSm1wPO+f/zi3669+eGP5PI3ZPa8t732rC8scurNbevWzevc8tEwKjyCIAiCjAOldpEztWfe8j9nZt6/Z/3Lkt/4QN+ArnFVNUMIIcbGZvdgnzdPXCwhhKTT6R07dsBxDQ0Nskl5RgHLsoQQg8FQkrONKzqdrvzLqdPpCCF6/RSYWYHnWf6Z7BiGmRKvfqo0JZZlGYYp/3JOlfcOjV2v10PbL2emxPMEWJYtbVGheUqZyJ6aT6XSRrOJIYQQwpgtxnQ4NdL9BgKBf/u3f4PPV1555Te+8Y0SXtjpdJbwbOPHVCmn1Wqd7CJoYqq0dqPRCIlgkVIxVZrSVCmn3W6f7CJoYqo8T5PJZDKZSnjCbDYr+/1ECjxjNHLpwX/OzPOJRJozGpl//lZTU/O3v/0NPtvt9lKlkobnODw8XJKzjSs2my0ajU52KQrAsqzD4YhEIkr1qXywWq3xeLz8LXin05lOp0ubmHo84DiOEJJOpye7IAWwWCx6vb78c5IzDGOxWMp/DwKDwWCz2cLhcPnnop8SXSghxOVyJRKJZDJZwnPq9XrZQdiECry7sT6/rX+YJx6GpL39wZr5dSNeH5Zlm5qa6KGl2mwmn88TQsq/ahJCeJ6fEuUkhOTz+fIvKjzP8hd4nuenxKufKk1pqpSTYZgp8d7BM5/L5cq/qFPieQIl70KVXPQTMq3CR/sPd/gSvGH+8iXeN187kuRzAxtf3zdt+dIqpvBfIwiCIAhSLBMi8Nldf/r+3X/ryDPWU6+9efnRX3/7hhvv3txy3bfW1KK+IwiCIMh4MD4uesOp/+/xUwX/XX7Lk8vho23eJd+755JxuSiCIAiCICOU+8oHBEEQBEFGAQo8giAIglQgKPAIgiAIUoGgwCMIgiBIBYICjyAIgiAVCAo8giAIglQgKPAIgiAIUoGgwCMIgiBIBYICjyAIgiAVCAo8giAIglQgKPAIgiAIUoGgwCMIgiBIBYICjyAIgiAVCAo8giAIglQgKPAIgiAIUoGgwCMIgiBIBYICjyAIgiAViH6yCyCP0WgsyXn0en0Jzzau6HS68i+nTqcjhBgMBvhQzrAsazQaeZ6f7IIUgGEYKOpkF6QABoNhsougCZZlGYYp/+fJMMyUaPLQhXIcl8/nJ7ssBZgSzxPQ6/WlLapSh1ymAs8wTKnOA5TkbOPKlCgnlHBKFJWUrhaNN1PleZKp8EhpFZ3sghRgCnVNZIpU0SlRSEppi6p0tjIV+GQyWZLzMAxjMBhKdbZxheO48i8ny7IWiyWdTmcymckuSwHgvZe/BW82m7PZbPm/ejA4UqnUZBekACzL6nS68n+eDMPo9fryL6fBYDCbzalUKpfLTXZZCjAlulBCiM1mK3mT5zhO9vtyd7QiCIIgCDIKUOARBEEQpAJBgUcQBEGQCgQFHkEQBEEqEBR4BEEQBKlAUOARBEEQpAJBgUcQBEGQCgQFHkEQBEEqEBR4BEEQBKlAUOARBEEQpAJBgUcQBEGQCgQFHkEQBEEqEBR4BEEQBKlAUOARBEEQpAJBgUcQBEGQCgQFHkEQBEEqEBR4BEEQBKlA9CU/Y27woxefe3Nv0Dzj0+dd+JlW0yd+5JPd7z73t/bDYWPLss9ffNYcO1Py6yMIgiAIUnILPnP4ybvu/8D66fM+13Lssf946IMYL/iRj3744I8f656+5ovnLUq8fPd/v+bjFU+EIAiCIMjoKbHAZw+8+Xb+rPX/uvykk8/76oUN77/xUVyg4bmOD3ZaV//LuiVzT1p92brp+z7clyzt5REEQRAEIYSU2kXPDx89mpx5QQtLCGGcs2Y5X+7sz6+cxf7zZ53LUxU6cizCT3Omeo757J5qw8hf5vP5aDQKn41GI8OUxncP5ynV2cab8i8nfZ7lX1QyFZ4nMCWe51RpSljO0oJNfpwobVGVzlZigY/HEharBdwCjMVmSXiFFryu5dzrPnfbnTfe+Jwr0Zc6+Zafz6eX9/l85557Lny+8sorv/GNb5SwWNXV1SU82/gxVcrpcDgmuwiaMBqNk10ETbAsazKZCh9XBthstskugiamSlOaKlW0qqpqsougiany3q1Wq9VqLeEJs9ms7PclDrJjWTabzf5T07OZrI7VCQYWmcMv/L7dceE3vry8JrrrmYce/d+P51232MoQQojD4bjtttvgsDlz5lBrfoxwHMdxXKnONq6YTKZkstynLHQ6ncViSSQSuVxusstSAJPJlEqleL7cwzwsFksul0ulUpNdkALo9Xqi3I+UD0ajkWXZeDw+2QX5J6lUSlbFGYYxGo3l3+RZljWbzfF4PJ/PT3ZZCjAlulBCiM1mS6VSmUymhOfU6XTQQkWUVuB1rhp3at9Qgid2huSCQ6Gqhur/m+XPdb6zMXraNy85dRZLSMuV57zz7Tf3rF98qoEQQiwWy0UXXUQP9fv9JSkQwzAGg2FKvHWO48q/nCzLWiyWdDpd2to5HsB7L3+BN5vN2Wy2/F89qFT5D0RYltXpdGXyPF944YWbb755//79LMuKfmIYRq/Xl0k5VTAYDGazOZVKlf+Yfkp0oYQQm81W8ibPcZzs9yUOsjPPWzyzY+uHwzwhiX1bd1kWLqz9PwteV1VdFe3qCuQJIXzsaOegs9qF6/ARBKlQjh07Njw8HIvFJrsgyHFKiV30TM2Z11y87aff/8F79eHOyIpv3DGTJYRk3r93/SOO7z2w/qyrL/n4l9+96Z0Z1YljPdzpN145SzyuRRAEqRAikQghJBaLTZWwFaTCKHmiG27a5++4f2Vfb8hc3+w2gfmun3vxbf/PME1HTLO+8P1fneHrHYhyNc31Tm7KRDwiCIIUCwj8lIgBQiqS0meyI4QxOJqmCwesjKNlHv2/3lY7bVbtOFwWQRCknKAW/GQXBDlOwTlwBEGQcQFsd7TgkckCBR5BEGRcCIfDBC14ZPJAgUcQBBkXcA4emVxQ4BEEQcYFnINHJhcUeARBkHEBLXhkckGBRxAEGRfQgkcmFxR4BEGQ0pPNZhOJBEGBRyYPFHgEQZDSE41GYSsEdNGXnIsvvvjXv/71ZJdiCoACjyAIUnrAP0/Qgh8Hdu/e/corr0x2KaYAKPAIgiClBwz3qbJd9RSC5/lwOLx9+/Z0Oj3ZZSlAPp+f3G12UeARBEFKD2S5qaurQ4EvLZFIJJvNplKp7du3T3ZZCvDNb37zW9/61iQWAAUeQUZJOp3etGmTygGxWGzFihXl3w0h4wG46BsaGtBFX1pCoRB8eO+99ya3JAXp7u7u7++fxAKgwCNTCZ7n4/H4ZJfin/z973+/+OKLVRpwV1fXoUOH1AcBSKVCBR4t+NIyPDxMCLFYLFu3bp3sshQgHo8nk8lJLAAKPDKVePjhh1etWjXZpfgn3d3dhJC+vj6lA+CnPXv2TFyZJoNkMln+s6ETDwh8fX09WvClJRgMEkJWr179/vvvT+4Md0FisdjkNg0UeGQqMTAw4PV6J7sU/wT0e2BgQOmA3t5echwI/A033PDtb397sktRdkQiEY7j3G43WvClBVz055xzTigU2r9//2QXRw204BGkCOLxeCqVguXFkw5Y8CouehD4I0eOQMKTSsXr9aqMco5bIpGIw+GwWq1owZeWQCBACDnrrLNYli3zafhJt+D1k3htFRiGKeF5SnW28ab8y0mf52QVNZlM8jyfSqXMZrP6kRNQSLDgvV6v0oX6+/sNBkMmk9m/f//SpUuVzjNhzzOVSnEcN7prwV8dPny4vb19/fr1wp/i8Xg+ny+T2ls+TT4ajdrtdpvNlsvlksmkqMaWTznVmfQmLyUcDpvNZo/Hc+KJJ27duvWaa66hP5VPIYF4PG6z2WRLVdqiKp2tTAXeZrOV5DwsyzIMU6qzjSt6vZ6WM5PJ6PX6cqusZKQamc1mo9E4KQXIZDKEEJ1OV/Cd6vV6q9UKn3fu3Pnee+9dd911pS0MCLzf71cqzMDAwIoVKzZt2nT48GGl0AGdTmcwGCamii5btuymm266/vrrR/G3LMvyPH/33Xdv2LDh61//Osuy9CfwqZRJK9Pr9VqqxwQQj8erqqo8Hg/8V1okYZMvW3Q6HSHEYrGUiduMEBKLxVwul81m+9SnPtXe3k6fYbk9z2w2m06nU6mUtFRGo1GvL6X4Kr2dMhV4mgRqjJjNZpZlS3W2ccXhcNByXnjhhUuXLr3jjjsmt0hSWJblOC4ej4PQTjww/ebz+TiOUz/SbrfTXKF33313e3v7pZdeWtS1Dh8+3NHRcfbZZ8v+Go/HwVXY09OjVMG6u7vPOOOMrq6uDz/88Itf/KLsMS6XK51OT4AXN5PJHD16tKura3TNwWg0Hj169OWXX87lcocOHWpqaqI/RaNRvV5fJq3MarVyHFcOhQkGgxaLBUZCAwMDJpNJ+CsYHuVQTnUMBoPT6YzFYrlcbrLL8k98Pp/T6YxEIvX19ceOHQuHw2B4CLvQcgASIaRSKVGpjEZjKpUq7bQdx3GiCgbgHHw50tPTc+DAgckuRTkCraKouJVcLrdx48ZRBDr9/ve/V4kdg/n11tZWpelnnuf7+voaGxsXLFiwe/fuYq8+Ru68884bb7xR+M3Q0BDP82MZSTz44IMQtAz3TkkkEjjNLCUSiYCLnmC22pISDAarqqoIIc3NzYlEAsbZZQgs6MUgO0RMNBqd3PQIZQu0maIGvx999FEwGEylUsV6HQYHBwcHB5ViZHp6egghy5YtU3pTgUAgmUw2NTXNnz9/z549E+zhPHLkyM6dO4Xf+Hw+UuSjE5JIJJ544okLL7yQjNw7JR6PY6C4FBpkR1DgS8rw8LDb7SaEtLS0EEltLB/gpWcymUmc3UCBL0ei0ajK6urjmVEMit966y34UGwnGwgE8vm8kn6DFXvyySeHQiHZ3DtwQFNT04IFC6LR6LFjx4q6+hhJJBKDg4PCb+C/o04T9Kc//Wl4ePiWW24xmUzCLjWdTmcymUwmg0vhRYTDYbvdDgKPA6ASEgwGnU4nIQTmiWAxSxkCbY3n+cma0CQo8BPDq6+++vOf/1zjwblcLpVKBQIB7DGlgLQXpVJvvvkmBDAX28kODQ0R5e6jr6/P5XK1tbURQmSX5sPIoKGhYcGCBYSQXbt2FXX1MZJMJoPBoHDedIwC//e//33lypWzZ89uamoSjj6pSwA1TASNoif4cAghhPh8vpLMVYXDYXDR19fXGwyGsrXgaVubxFWyKPDjzuHDh6+//vr7779fY5RKLBbjeT6fz5dPRpfyAZqK9gYTCAR27Njxuc99jhTfydIYOtlfe3p6mpqa6uvriUKum97eXp1OV19f39zc7HQ6JzjdTSKRyOVywulJv99PxiDwPp9vxowZhJCmpibhHDwKvBKRSMRms+EcPOW+++776le/OvbzDA8Pg8CzLNvQ0FD+Aj+JphoK/PiSTCbXr1+fyWSSyWRXV5eWP6F9AU7DSyl2Dn7jxo25XO78888nRXayPM+DOooCyih9fX1U4GXfVH9/v8fjgXXn8+fPF82Ijzfg6hB66eHzqI0Jv98PK76ampqEXSrtxcZbww4cOJDNZsf1EiUkl8vF43G73W42m3U6HY5+CCGRSGTsUe6ZTCYajYLAE0Kam5vLVuBpi5jEODsU+PHlRz/60ZEjR373u98RQvbt26flT2hfcBwKfDAYhJ0klCh2Dv7NN99sa2ubN28eKdLEDIfDMHOmYsE3Nze73W6O45QseLqWbPHixTt27NB+9bEDjwgC6wAQ+NHJMM/zfr+/pqaGENLc3DzxFnw8Hj/99NOff/758btEaYlEIjzP2+12hmEwmR0Qj8fHvlNUOBzmeZ4KfEtLS/kLfCqVmqwyoMCPL6+99tqXv/zldevW2e12jWmTj2cL/lvf+tbatWuVhvn5fB6aivZuYuPGjatXrx6FmxTMd47jZC14ugSOYZi6ujpZgYcD4POiRYt8Pt9EvlDQXakFP7oednh4OJPJUAs+GAzSh0lPOK4CPzQ0lMvlYJZhSgB12G63E0JQ4IGSCDzsNEMFvqmpqcyD7Ai66CuVdDrd29s7e/ZshmHmzp2r0YI/ngV+aGjo8OHDN954o+zCEmosavQzHz58uL+/f+XKlaMIdIIIu3nz5snaB4FAIJFIgIFeX1+vZMELBZ4Q8vHHH2svwBhREvjRuejhaYAFD3dNHwutruOqYTDegswhUwKobFTg0UVPRuJCxuivBg+f0IIPBALls4W0EFoqdNFXJseOHcvlcjNnziSEzJs3T6MFD31BfX39cSjwiUSitbV1w4YN9913n+yv8EFjg2lvb2dZdsWKFaNYqgSKsnDhQlmBp0vgiMKb4nm+v7+fCvzMmTMdDsdEeunhEQlN3sHBQb1eP7quEM4DFnxzczMRbJI7MS56sNumkMALLXibzYYCT0YEb4xiLBJ40XCzrEALvsLp7OwkhEDs8dy5czs6OrS8abCEZs2adRwKfDweP/vss6+88sr//u//lhrxGped0BXn7e3tCxYsqKqqYlnWbDaPwkW/cOFC2VRZ0KGoWPBDQ0OpVIrOwTMMs3Dhwgmz4NPpNKScoxZ8Pp8fGhpqamoau8CLutSJcdGDwEOi4ikBCLzD4SAo8CNAVRmjp0dqwZOyF3i04CuTrq4uvV4PFs+8efOy2eyhQ4cK/hX0BbNnzz4+Bd5qta5cuTKRSEhXCdIGQz+8/PLLIvXdtm3bsmXL3n333Xw+v3nz5pUrV8L3xbpJ/X4/x3Fz584lct1HX18fy7IQQt/Q0CAVeDBwhQnbFy1aNGECTwdANMgO1sRPmzYNsiwUe0K/388wDAi82Wx2u900NAGuZTAYxtVFDwJfVpnG1QFnA87BC4GHMHYLXqfTwciJENLc3MwwTNkKPGTgwCC7yqSjo6OlpcVgMBBCIJBbyzR8LBbjOA6SnJcqx2EwGJwSaXPi8bjFYmltbSUCQ5wictFns9mrr776r3/9q/AYyLh+11137d69e2hoiAq8zWYr1oKvrq5WcgD29vbW1dXBm62vr08mk6Lgf9C/hoYG+s3ixYsHBweVFt2VFnhQDoeDWvCg9NOmTSOj6mH9fr/T6YT7JZ8MpI/H4yzLulyucTVS4fFqcdG//fbb99xzz/iVRCOiILuJt+BXrVr197//fYIvqk6pXPQOh4NuZmgymaqrqzXG2U1wRrlYLAYpddFFX5l0dnaCf54QUl1dXVNTo2UaPhaLWa3WxsbGVCoFhsvYOe+88375y1+W5FTjilDgjx49KvoVdMtqtcKHaDSaz+dFXSd0H++///5tt91mMBg+9alPwffFukmHhobcbndDQwPLslJVpovCCSGyuW5AWWtra+k3ExlnBwOglpYWKvDwAR7sKHrYoaEhiLADhIuPwUwpdvxULOCn0eKif/755//nf/5n/EqikUgkwnEc7Hk4xoezefPmX//61/fcc8+WLVs0/kksFtu3b5/GoJ8JA5rtGOsJzVNLaWlp0ThuPvPMM3/zm9+M5epFEYvFYCoBXfSVSWdnJ0TYAfPmzdNiwUejUavVCsZfqbz03d3d5enFEgJZzS0Wi9vtttlsSha82+2GD2AkifoLUK+TTjrpjTfeWLp0Kd0SvlgramhoyOPx6PV62VRZwWAQxuZkROBFewcEAgGr1Wo0Guk306dPdzqdEyPw8HxaW1vBn0FGBH769OlkVAI/ODgoFHhhrhsq8GViwSeTyXKIqYat5ODzWCz4jz766KKLLvrJT37y85//XN0zkclk6HhONB569dVX169fP7oClAqe56Faqrydw4cPX3fddep2digUcrlcwm+0r5Q7cuTIRK6pi8fjaMFXLNlstru7G7pUQONKuVgsZrPZSijwsPxUtPVIGQIt32KxEEJaW1uVLPjq6mpqwROJwMdiMb1e/4Mf/IAQsmrVKvr9KFz00DhFidsAumElFLW+vv7OO++EtWSiP6cwDLNo0aKJCaSnFnwmkwEnkN/vNxgMENU/ipVyMNyh/4V09DB0SCQSFotlvL3Q2pfJlaHAi+re3Xffffnll2t5C9ls9uabb54zZ86xY8fWrVun/icPPfQQnZCCqkgF/v3333/xxRcn16BPJBJQYVTeTnt7+3PPPaeeopvmqaVotODD4XA6nZ7IuZJ4PF5VVcUwDFrwFUhPT08mk6EuejKyqLpgDQMXfX19PcMwJdlTDqR9qgg8hKVMmzZNasFDL+lyuYQWvKi/AIPy9NNP//Wvf33llVfS7zUqEI17GBoaqq6uJpLEbUAwGKRmhNFofPrppwcHBy+55BI6Ey8VeELIrFmzJmZPOWrBE8Hb93g84M8Y3Ry8yIJPp9M0c47FYhlvF31RFvwk7u1Bgb1i4bOo7v3jH/+A/FcFy/nQQw/t2bPnF7/4hcFgMJvN6jqxb9++oaEhOEY0HoKnt2HDhjHc0FiRRshKgYam/paFY2ugubm5v7+/YBpjGPRMsMDbbDaDwVBZQXbZwKEtr7748sZdA3LVkU96925+5YW/b9rnnzJ5pUeFcI0c0NLSAhnQ1P8QXPQmk8nlcpXEgoeOuPyzgIkseCUXPbXglVz0cIZrrrkGnOeAFh9yKpU6+eSTn3nmGSJQaNlk10KBJ4TMmzfv6aef7urquvfee+EbWYGvqqpST8RbKqgFT0bevs/n83g8MHgqiYuejLiXJsyCt1gs2Wy24DAimUxms1lZp+i77777+OOPj08BxUAMB3y22WypVAoUKJ/PHzp06HOf+9zWrVsvvfRS9TP813/91+WXXw5xJEajUV0njhw5QkZet8iCFwn8Bx98MPFR/VoEHhqaehsJhUIigW9qaspmswW35oIOcIIFHnryCnLR8/63f3nrzzYci/i2/O7ff/Tc0U/un8bHdj7y3Tse2xFMDW66/7s/f8tfmhjxsqSjo4NlWYhbBiA2pGCgELjoSely3UDNptOxZQuNoSOETJs2ra+vTzQbl0gkOI6z2+0gYNBWRf0F+D+kJ9diYoITb9u2bZlMJhQKgQXf2Ng4ODgobKI8zw8PD4smAhctWrRo0SI6raAk8BOzkhueJNQ9asHX1NTA0KdYgc/lcsPDw0IXPfSwYCZOTJBdMBiE2yloxEPdkDWOn3nmmQkLNYXNBuGzMM/SsWPHEonEV77ylR/+8IevvPKKSn3Yu3dvLBa77rrr4L9Go1HdghcKvGgOPhQK6fX6HTt29PX1bd++/fOf//xTTz019nssCi2bEsEEuXobkVrwGmczJ17gY7GYxWLhOK5yXPS5rtefP7T0htu+etlVt95yTvLFFz8WDl3yvRsef2/29T/4+qVfvOrfb77EExpIlLXijInOzs7GxkYIowVA4Av2UGDBE0IaGhpKKPCZTGZizMdRI7Lgc7kceDu8Xi9YP4lEwmw2m81mOFLdghehxcSE03788cfBYJDneSrwoq17I5FINpsVCTwhpKamhq47FxpwlKqqKtgLq8CDGDPQoTQ0NOj1euq/qa2tHZ3Awxp6ocDDvUNHDA98XC34fD4fCoVA4AuOkFQEHpIraNy1eYwItxoSboUAE+Fz58498cQTyYikyQLrMuhKS5PJpGLBDw8Pg6hDY4d/hRb86aefrtPpXn755e985zv5fH4SLXiVS4OLXv0VS+fgIbKkDAUemob6ixtvSivwfPTwgcE5i080EULYlkXzDR2H+vP/92tk7+6BOYtbfB9vbt+y37zy2gsWWJiSXr+cEIXQk+IteNkMKqNAtFaqbBEJPCHk6NGjsVhs+fLlf/rTn4hA4NXn4GUFXouJCafavXs3PHZQaJB5YQAdjJOkAl9bWytMLCMVeKgAEzDMgudjsViqq6uFFvzoXPTCNHaA0+lkGAbC9ybAgg+Hw5Clh2jIdaMu8Fp8uWMnEomEQiHIcEU+acHv37/fZDJNmzYNflUXeJPJRMXMZDKpGIJgvpNPWvDCOfi2trZly5bdfffdO3bsYFl24m1KJRf9hg0bdu/eTQjJZDLQ7lRMoHg8nk6nRQJfU1Oj1+sLTn1CNR6PWvr888/DvJ4IcNFzHDeJAq8v6bzVw+sAACAASURBVNn4cChqcTogHQbjqLJHhsK88Ndw7sCf7/7trBNn8gce+WPj+rv/32eqQeKHhoZuuukmOO7cc8+9+OKLS1IgnU7HMIyoQkwMx44dW7VqlfDSNpuNYZhMJiNbHpZl4ftEIuF2u6uqqmpqauhKyrEQDod1Ol0+n08mk2M8G8MwhBCbzTZ+3v76+vqqqqqTTjqJEOL3+99///1IJBIIBKqqqnK5nNVqdblcqVQKrGFCSCKREN5UJpNxOp2Qnla4Xra2tjaRSNjtdpoiQ4pOpyOEpNPpDz/8kBAyffr0qqoq0BVhtwKdaUtLi+hhtra2+v1+KFg4HG5ubpaG+xJC8vm88HudTmc0GmkOmZLAMIxOp6urq6uvrx8eHnY6nX6/v6WlpaamBlxKRVUDEIPW1laLxQJDBDIyr1xVVQVPxuPxlKSuygKjK8gqmM1m1a8CkykGg0F6GPwUiUTGu0MAS/SEE06AC4EVrtPpqqqqurq65s2b53a7HQ6HXq+HCiN7kmAw2NjYSH+tqqqCBy57MEijwWCAvdJhGBQOh2EoFg6H6+vrZ82aBRP/7e3twh1X1YEm73A4xtjk4Tx2u130Bu+4447TTjvtiSee6OrqAueKym3CIKmpqUlqxA8NDcm+dAq1B0r+9v/3f/83k8lce+21wi9h0a/H47FYLNKnbTabhWtoxw6kppZSWoEnRFQHeHGtSJtO+/qPr5hlIImTH/jGwy8dXn7lbJYQQgwGA+R6I4TU1NQUDInUiF6v1+l0pTqbdvL5fGdn51VXXSW6tNVqDQQCsuWh5QyHwxBPZDKZ4vH42As/MDAwY8aMI0eODAwMjPFsDMOwLJvL5ZTq01iAFmg0GuHePR7PkSNHoK/0+/3ZbDYajVosFqPRCI8FfCGxWEx4U9Fo1OFwZLNZhmGE35vNZpg7F2XJEEKdK6+88gohxOVyZbNZOH5wcJCeDYwkp9Mpepg1NTXRaDQUCkWjUZ7n4c+FB8C6KbgX+iXLsvl8vrRVNBaLmUymXC4HTgVIjO/xeLLZrMVigSkG7WcD8aiurs7n89S/7XK54EZisZjZbLZYLIlEIplM6vX/7FIuu+yyb37zm6eddpr0hPAWoMfXAjxwGGkFg0H1wlPvjvQwsN6OHj168skna7z06IAA28bGRigDOOR6enqWLFmye/fu+fPnw/dNTU2dnZ1Kt9Pb29vQ0EB/NRgMED8oe/CBAwfAKoA2Pjg4yDBMLpcLBoM2my0UCjkcjgsvvLC9vf0///M/zzzzTHBmaLkXnU7Hsmw2m1UR+HvuuefSSy8VxrRKgdYNbYReOpvN9vb27tq1K5vNdnV1EUIYhlHqIcmIZ8Jms4kOgGQVPM+r3BR4boqt/FoYHByUXhr8ECaTyWg0ip62Xq8veZNXorQCzziqbImuSJYQlhA+Eo7ZnY7/mwRgbA6bafrsaQZCCDFNb6sP7BrMERB4h8Nx22230UNLFfJtNptZlhXNu+zatUun082fP78kl5AlGAymUimn0ym6NGQPlZ0HcjgcdGE3x3HRaJRl2Xg8PvZJo4GBgdmzZ3d2dnZ3d4/xbCzLQn0dj6SP0Hp5nodCtra27t+/v729nRDi9Xqj0Wg4HDaZTDDCCAQCcHw0GhXeVDgchk7EbrfHYjHaK4Hw+Hw+FQseLEW73f7OO+8wDANvAcaI/f399Cow22c0GqUvlxDS2dkJJq/FYhEdANaz8FSEEIPBkMlkSus5DIVCJpMpGo263e6DBw/+4x//gPuKRqNms3l4eLioatDT08OyrMViSSaT1NnocDh8Pl80Go3FYgaDAR6v1+uF8VA8Hn/uuecWLVq0YMECadmWLFny05/+9Etf+pLGAoD3FdICwkVVDgaBHxoakh4G33R0dIz3ROzhw4cZhqHpe+vr61taWv7617+uWrXqwIED5513XjQaZRimpaVFpTA9PT2NjY30VyrYss6effv2zZw5ExbWRqNRmJHx+Xz9/f02my2fz5vNZofD8Yc//IEQwnFcOBzW+BAMBgPHcfF4XCl2IRAI3HbbbT6f7/bbb1c5D0zoVFdXCy/d09OTzWYPHjwYCAQOHjxICGlubvb7/UplA5EGR4Xw+7q6umPHjoENoFQA+NtUKhUIBIShUWMHehXRpWG2TqfT6fX6WCwm/BVm5Uu7mJPjOJPJJP2+tHPwjG32CZ7Duw6mCSH5gb370rNOaBQIvKNttqv78LEsIYSkjnZ6PQ21ip3tOHLnnXfedddd43oJ4W7QQpxOp/ocfCqVymQyMGlXcOWrRvx+f319PZhcYz/b+BGPxzmOoyZga2vr66+/HgwGa2pqoHeAOXiox4lEotggO1IoxAZmBz/1qU+l02m73Q69ALj6hVvaBAIBhmGkngBQoMHBQThYNsiOTMiWaIlEAp4SZEdev3798uXLly9fTgixWCyjmIN3uVyigZHL5aJBdjAHTwSPF94XfTU7d+787W9/C59ffPHFSCRy+PBh4dm6u7svu+wypbcDzxNWAYwlyA5uvCS5JdTp7e31eDzUB8swzAUXXLBhw4ZDhw4lk0mYayCETJs2TX0OXmgTwwtV6hA6Ojra2tpqampoTCUs0A2Hw/DEhC7iUnUsAMSUvPjii+qHxWIxhmGqq6uF1Q/WxYHG9/b2Wq3W6dOnq7xiMItpggFKY2Njwdc6ODg4im2jC8LzfCAQkAbWQOWvsCA7wk5b86V5Ox+696m/P/ebe9+wXvyFRRwhJLf/2f+8d8PRHNu25nzPmz+7+w/P/OXBu37z8QlfXNs2GQLf19c33ttSKVVEp9MpG2MViUT+8Ic/8DwP1YIKfC6XG/saSkhyQht/NpulITllhUibp02blkgkPB7PGWecIRR4mAamAg9zXfSvYGmK9OQiBVIqACFkxYoV5JPy7HK5hJsCwHYXdCBCgZXiXq9XSeBhzczEBNnBU6qpqUkkEmvXrn3mmWdAb0Yh8KI0doDT6aRBdpDohggUHe6RPu0XXnjhzjvv3LNnDyEEwpFEuYP27Nnz+uuvK6kdbCBWVVXlcDgKtlzoTJWC7KSXHg96e3sh3oJy/vnnh0IhGOUIBV4pgTTP816vVyrwslLB8zwIvMfj8fv9+Xx+eHgYBD4UCon2VyUaVtwVBZz/yJEj6mk6YSAo2liPvvE9e/b09PS0tLSom0AqAu/1emHesKenR7aG+/1+mOUpubcsk8lA9J/weyjDpAfZlXodPONe8Y2ffHNlVd648KoffW9dC0sIIYytcXZbnUVHmNrPfednN5/VxJmmn3fbL25e5ZmUIHqRj3Q8EO4lJcTpdMrGiG7atOmGG27o7OyEygfdpfaY582bNyuNA7LZbDAY9Hg80PgJIX/5y19WrVpF473LB5HAQyD92Wef7fF4hAHbcAwIPMzjCh8RRK5KTy5SIKUC6PV6yCsilDS32y2y4GXjdDweD8MwKhY8UR7hlZZkMgl6cNFFF913330PPvgg9UnSRYbaEe6sQ3G5XMPDw7D5LCyTIxILnv43EonwPH///ff39vZu2bKF4ziRsMF7UbHgnU6nTqdTaj6UfD4PnansPYLAT8AuzN3d3cKdggkhixYtmjFjxtNPP202m6n2T5s2LRAIyN41zPEJBR7GZ7LCDBNYM2fOhEE8vBdYwkMFXuhwUg/ILxY4P8Mw6kY8tG6LxSJsgz09PZC1c9++ffDQtAi8tF9taGhIp9PQv61bt06atB/sbEgcXtrOn/YMomJTgS+YoWhcGYdMdqxr1vI1561bOb92JEpQ17z8kvOW1jCEEMJ55ixf84Xzzj51un1S1D0UCiUSifEWeBULXrb6QqXv7e2FgkF3qe6Uo/j9/gsuuEC0ayolEAjk8/na2lpqwe/atSudTr/66qvF3tR4AznR6H9huL127VqXywWtSOiiTyaTMMdMJAI/Fhe9xWI56aST9Hq9ugUvXSNHCDEYDC6Xy+fzSXeaoUxMMrtkMgmjw/r6+ssuuwxWBwB0Lz7tDA4OwlpBIXAjcCrqoley4GG8+7e//e2ee+7R6/UXXHBBUQJP8wY6HI6CM1zwQclFbzAYJsaCp2vkKBdccEEmk5kzZw59HTCElfVbwISxkot+YGBgzZo19EY6OjoIIWDBBwIBaObUgp8YF/2KFSteeukllcOoBS9srd3d3S0tLfPmzdu7dy88NPUxHEThSGfQYSl8T09Pf39/f3+/bG7pbDYrFPiDBw/+6Ec/GvtqILqAVtSu6aLfyspkV/bA+H288zxAjwa9nhClHoo6D6HywR9SU1X9WnAv7777ruyvdBEzteDBkwaB4mWFyLu+fPnye++998wzz3S5XPF4PJVKgXVOHRvRaLSuro4I3iYsBVRx0Re04GEl2Iknnijcyl1kwYvy1Aqpra0dHByUzXIDTIzA0zl4KaNz0Qvz1AJwI9RMEY2fRAIfjUZPPvlkh8Px6KOPnnHGGQsWLOjv7xcuxIDzKL0docCrW/BUt6QCBsZ9a2urz+crKtfNo48+escdd2g/PpfL9ff3iyx4QsgFF1xABP55MiLwsl56WLmg5KLv6ur66KOPnnjiCfjpyJEjDMPMnDmztrYWUuESQqZPn67T6cLh8Hi76IPBIMMwl19++b59+1Tm/hKJhNVqFVW/np6e5ubm+fPn7927Fz6rW/DCDP9CoLX29vbCZk5S9yR0fWAzQLV88803H3jggbfeequom+3u7n7sscekZybKAl9RmezKHxD4SXTRqwu8cA5eowUPB7z33nuyv8JwXjgHv2/fPofDsXHjxnLYdEuIyPjmOO7yyy83GAwgloFAQDoHDwJPbwR2rJJ10Wux4GEZHiHkySefhP3oAOpCAAoKfDAYlJq8wIQJPF2wLqKELvpEIgGODakFL3XR19fXw46ll1xySXNzcyaTESacmQALHurGrFmzis11s3nz5jfeeEP78bBQTSrwJ5544jnnnLNmzRr6TUtLi06nk91/SCrwQhc93N1TTz0Fg6QjR47U19dbLBZ4TQcOHCCEeDweu90OLnpYrEVPVVoXfSgUstvta9euNRqNKkY8ddHLWvBerzcejzc3N0OYhdIITEng6+vrdTpdb28vbMcsFXiws8GrAdUMWjSN/dTI008/feuttwpXuFELXlQzKzPIrvyBlpNIJMY1Y2U4HDabzdIFLUoOKKj0Ihe9xjl48P90dnbKpr2jAu/xeCKRSHd399DQ0DXXXJNKpYodvY43St516NyDwaBI4KUWvDAXngiO42DZm5YC1NTUCAdnbrdb6KKXzVIHwNqkoaEhpRHAxKSjp3PwUoq14OPx+PDwMDxnIWARQuiydA4eBjH0vUSjUZvNdv3113/nO99Zu3YtiJ/QctUu8OpBduoCTwiZNWsWKTLODnIbaD8eTi510RNCHn/88fPOO4/+l+O4uro6JQvebrcLh6pCCx7eYHd39+bNm3mef//99+G+hAJfXV0N46FQKCRa8VFayYGsBjabbeHChRBHKQtNaUz3jeV5Hqx2yNpLCAELnud5pbccDodlBd5gMHg8Hirw0gEc2NngoofKBi367bff1rKFN6WzsxNiGIVnhgUmooE7rBqAvB0o8BMHDbFRXzG5cePGsVxFuBu0EKfTCSGXou9FFrwwyK6gi54OxmWNeL/fz3Ec5MUjhGzatIkQcuGFF06fPr3cvPRKAg9qGgwGYRoPHgtkwwATR5QFU/YkREO2WpURRjQapRNp0u0uKJBYJhAIKFnwExZkp2TBFyvwID9SexSeALQmGMsajUaVOXi73V5VVXXrrbdy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" style="display: block; margin: auto;" /></p>
+</div>
+<div id="start-values" class="section level3">
+<h3>Start values</h3>
+<p>Before running the optimization, we need to generate initial
+parameter estimates. The <code>start_values()</code> helper function
+provides starting points based on the time series data, which helps the
+optimization algorithm converge more efficiently.</p>
+<div class="sourceCode" id="cb6"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" tabindex="-1"></a><span class="co"># Obtain initial parameter estimates using the package&#39;s helper function.</span></span>
+<span id="cb6-2"><a href="#cb6-2" tabindex="-1"></a>start_par <span class="ot">&lt;-</span> <span class="fu">start_values</span>(<span class="at">y =</span> y, <span class="at">ar =</span> ar_vec, <span class="at">ma =</span> ma_vec, <span class="at">link =</span> link)</span>
+<span id="cb6-3"><a href="#cb6-3" tabindex="-1"></a></span>
+<span id="cb6-4"><a href="#cb6-4" tabindex="-1"></a><span class="co"># Display the starting values in a formatted table.</span></span>
+<span id="cb6-5"><a href="#cb6-5" tabindex="-1"></a>start_par_print <span class="ot">&lt;-</span> <span class="fu">round</span>(start_par, <span class="dv">4</span>)</span>
+<span id="cb6-6"><a href="#cb6-6" tabindex="-1"></a>start_par_print <span class="ot">&lt;-</span> <span class="fu">t</span>(<span class="fu">as.data.frame</span>(start_par_print))</span>
+<span id="cb6-7"><a href="#cb6-7" tabindex="-1"></a><span class="fu">rownames</span>(start_par_print) <span class="ot">&lt;-</span> <span class="cn">NULL</span></span></code></pre></div>
+<table>
+<caption>Initial parameter estimates for the BARMA(1,4) model.</caption>
+<thead>
+<tr class="header">
+<th align="right">alpha</th>
+<th align="right">varphi1</th>
+<th align="right">theta1</th>
+<th align="right">theta2</th>
+<th align="right">theta3</th>
+<th align="right">theta4</th>
+<th align="right">phi</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td align="right">-0.0045</td>
+<td align="right">0.4504</td>
+<td align="right">0</td>
+<td align="right">0</td>
+<td align="right">0</td>
+<td align="right">0</td>
+<td align="right">19.8918</td>
+</tr>
+</tbody>
+</table>
+</div>
+<div id="estimation" class="section level3">
+<h3>Estimation</h3>
+<p>Before proceeding to the optimization, we define several key
+parameters for the estimation procedure. This includes the model order
+(<code>p</code> and <code>q</code>), the sample size (<code>n</code>),
+and the penalty term (<span class="math inline">\(\lambda\)</span>) for
+the ridge regression.</p>
+<div class="sourceCode" id="cb7"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" tabindex="-1"></a><span class="co"># --------------------------------------------------------------------------- #</span></span>
+<span id="cb7-2"><a href="#cb7-2" tabindex="-1"></a><span class="co"># Define key parameters for the estimation procedure</span></span>
+<span id="cb7-3"><a href="#cb7-3" tabindex="-1"></a><span class="co"># --------------------------------------------------------------------------- #</span></span>
+<span id="cb7-4"><a href="#cb7-4" tabindex="-1"></a><span class="co"># Determine the maximum AR and MA lags.</span></span>
+<span id="cb7-5"><a href="#cb7-5" tabindex="-1"></a>p_max <span class="ot">&lt;-</span> <span class="fu">max</span>(ar_vec)</span>
+<span id="cb7-6"><a href="#cb7-6" tabindex="-1"></a>q_max <span class="ot">&lt;-</span> <span class="fu">max</span>(ma_vec)</span>
+<span id="cb7-7"><a href="#cb7-7" tabindex="-1"></a></span>
+<span id="cb7-8"><a href="#cb7-8" tabindex="-1"></a><span class="co"># Get the number of AR (p) and MA (q) parameters to be estimated.</span></span>
+<span id="cb7-9"><a href="#cb7-9" tabindex="-1"></a>p_len <span class="ot">&lt;-</span> <span class="fu">length</span>(ar_vec)</span>
+<span id="cb7-10"><a href="#cb7-10" tabindex="-1"></a>q_len <span class="ot">&lt;-</span> <span class="fu">length</span>(ma_vec)</span>
+<span id="cb7-11"><a href="#cb7-11" tabindex="-1"></a></span>
+<span id="cb7-12"><a href="#cb7-12" tabindex="-1"></a><span class="co"># Get the length of the time series.</span></span>
+<span id="cb7-13"><a href="#cb7-13" tabindex="-1"></a>n <span class="ot">&lt;-</span> <span class="fu">length</span>(y)</span>
+<span id="cb7-14"><a href="#cb7-14" tabindex="-1"></a></span>
+<span id="cb7-15"><a href="#cb7-15" tabindex="-1"></a><span class="co"># --------------------------------------------------------------------------- #</span></span>
+<span id="cb7-16"><a href="#cb7-16" tabindex="-1"></a><span class="co"># Define the penalty term for the ridge regression</span></span>
+<span id="cb7-17"><a href="#cb7-17" tabindex="-1"></a><span class="co"># --------------------------------------------------------------------------- #</span></span>
+<span id="cb7-18"><a href="#cb7-18" tabindex="-1"></a><span class="co"># This penalty term will be used later for the penalized estimation.</span></span>
+<span id="cb7-19"><a href="#cb7-19" tabindex="-1"></a><span class="co"># The formula provides a small shrinkage value that depends on sample size.</span></span>
+<span id="cb7-20"><a href="#cb7-20" tabindex="-1"></a>a_max <span class="ot">&lt;-</span> <span class="fu">max</span>(ar_vec, ma_vec)</span>
+<span id="cb7-21"><a href="#cb7-21" tabindex="-1"></a>penalty <span class="ot">&lt;-</span> <span class="dv">1</span> <span class="sc">/</span> (n <span class="sc">-</span> a_max)<span class="sc">^</span>(<span class="fl">0.90</span>)</span></code></pre></div>
+</div>
+</div>
+<div id="optimization" class="section level2">
+<h2>Optimization</h2>
+<div id="conditional-maximum-likelihood-estimation" class="section level3">
+<h3>Conditional Maximum Likelihood Estimation</h3>
+<p>Demonstrating Numerical Instability</p>
+<p>First, we’ll attempt to fit the model using the standard Conditional
+Maximum Likelihood Estimation (CMLE). The following chunk uses the
+<code>stats::optim</code> function with the <code>BFGS</code> algorithm.
+As demonstrated in the paper, this standard approach can fail to
+converge for certain time series, which is what we expect to see
+here.</p>
+<div class="sourceCode" id="cb8"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1" tabindex="-1"></a><span class="co"># --------------------------------------------------------------------------- #</span></span>
+<span id="cb8-2"><a href="#cb8-2" tabindex="-1"></a><span class="co"># Perform Conditional Maximum Likelihood Estimation (CMLE) via `stats::optim()`</span></span>
+<span id="cb8-3"><a href="#cb8-3" tabindex="-1"></a><span class="co"># --------------------------------------------------------------------------- #</span></span>
+<span id="cb8-4"><a href="#cb8-4" tabindex="-1"></a>optim_AG_BFGS <span class="ot">&lt;-</span> stats<span class="sc">::</span><span class="fu">optim</span>(</span>
+<span id="cb8-5"><a href="#cb8-5" tabindex="-1"></a>  <span class="at">par =</span> start_par,</span>
+<span id="cb8-6"><a href="#cb8-6" tabindex="-1"></a></span>
+<span id="cb8-7"><a href="#cb8-7" tabindex="-1"></a>  <span class="co"># The objective function (fn) is the negative log-likelihood.</span></span>
+<span id="cb8-8"><a href="#cb8-8" tabindex="-1"></a>  <span class="at">fn =</span> <span class="cf">function</span>(estimate) {</span>
+<span id="cb8-9"><a href="#cb8-9" tabindex="-1"></a>    (<span class="sc">-</span><span class="dv">1</span>) <span class="sc">*</span> <span class="fu">loglik_arma</span>(</span>
+<span id="cb8-10"><a href="#cb8-10" tabindex="-1"></a>      <span class="at">y =</span> y,</span>
+<span id="cb8-11"><a href="#cb8-11" tabindex="-1"></a>      <span class="at">ar =</span> ar_vec,</span>
+<span id="cb8-12"><a href="#cb8-12" tabindex="-1"></a>      <span class="at">ma =</span> ma_vec,</span>
+<span id="cb8-13"><a href="#cb8-13" tabindex="-1"></a>      <span class="at">alpha =</span> estimate[<span class="dv">1</span>],</span>
+<span id="cb8-14"><a href="#cb8-14" tabindex="-1"></a>      <span class="at">varphi =</span> estimate[<span class="dv">2</span><span class="sc">:</span>(p_len <span class="sc">+</span> <span class="dv">1</span>)],</span>
+<span id="cb8-15"><a href="#cb8-15" tabindex="-1"></a>      <span class="at">theta =</span> estimate[(p_len <span class="sc">+</span> <span class="dv">2</span>)<span class="sc">:</span>(p_len <span class="sc">+</span> q_len <span class="sc">+</span> <span class="dv">1</span>)],</span>
+<span id="cb8-16"><a href="#cb8-16" tabindex="-1"></a>      <span class="at">phi =</span> estimate[p_len <span class="sc">+</span> q_len <span class="sc">+</span> <span class="dv">2</span>],</span>
+<span id="cb8-17"><a href="#cb8-17" tabindex="-1"></a>      <span class="at">link =</span> link</span>
+<span id="cb8-18"><a href="#cb8-18" tabindex="-1"></a>    )</span>
+<span id="cb8-19"><a href="#cb8-19" tabindex="-1"></a>  },</span>
+<span id="cb8-20"><a href="#cb8-20" tabindex="-1"></a></span>
+<span id="cb8-21"><a href="#cb8-21" tabindex="-1"></a>  <span class="co"># The gradient (gr) is the negative score vector (the first derivative</span></span>
+<span id="cb8-22"><a href="#cb8-22" tabindex="-1"></a>  <span class="co"># of the log-likelihood).</span></span>
+<span id="cb8-23"><a href="#cb8-23" tabindex="-1"></a>  <span class="at">gr =</span> <span class="cf">function</span>(estimate) {</span>
+<span id="cb8-24"><a href="#cb8-24" tabindex="-1"></a>    (<span class="sc">-</span><span class="dv">1</span>) <span class="sc">*</span> <span class="fu">score_vector_arma</span>(</span>
+<span id="cb8-25"><a href="#cb8-25" tabindex="-1"></a>      <span class="at">y =</span> y,</span>
+<span id="cb8-26"><a href="#cb8-26" tabindex="-1"></a>      <span class="at">ar =</span> ar_vec,</span>
+<span id="cb8-27"><a href="#cb8-27" tabindex="-1"></a>      <span class="at">ma =</span> ma_vec,</span>
+<span id="cb8-28"><a href="#cb8-28" tabindex="-1"></a>      <span class="at">alpha =</span> estimate[<span class="dv">1</span>],</span>
+<span id="cb8-29"><a href="#cb8-29" tabindex="-1"></a>      <span class="at">varphi =</span> estimate[<span class="dv">2</span><span class="sc">:</span>(p_len <span class="sc">+</span> <span class="dv">1</span>)],</span>
+<span id="cb8-30"><a href="#cb8-30" tabindex="-1"></a>      <span class="at">theta =</span> estimate[(p_len <span class="sc">+</span> <span class="dv">2</span>)<span class="sc">:</span>(p_len <span class="sc">+</span> q_len <span class="sc">+</span> <span class="dv">1</span>)],</span>
+<span id="cb8-31"><a href="#cb8-31" tabindex="-1"></a>      <span class="at">phi =</span> estimate[p_len <span class="sc">+</span> q_len <span class="sc">+</span> <span class="dv">2</span>],</span>
+<span id="cb8-32"><a href="#cb8-32" tabindex="-1"></a>      <span class="at">link =</span> link</span>
+<span id="cb8-33"><a href="#cb8-33" tabindex="-1"></a>    )</span>
+<span id="cb8-34"><a href="#cb8-34" tabindex="-1"></a>  },</span>
+<span id="cb8-35"><a href="#cb8-35" tabindex="-1"></a>  <span class="at">method =</span> <span class="st">&quot;BFGS&quot;</span></span>
+<span id="cb8-36"><a href="#cb8-36" tabindex="-1"></a>)</span>
+<span id="cb8-37"><a href="#cb8-37" tabindex="-1"></a></span>
+<span id="cb8-38"><a href="#cb8-38" tabindex="-1"></a><span class="co"># Display the final parameter estimates in a formatted table.</span></span>
+<span id="cb8-39"><a href="#cb8-39" tabindex="-1"></a>optim_AG_BFGS_par <span class="ot">&lt;-</span> <span class="fu">round</span>(optim_AG_BFGS<span class="sc">$</span>par, <span class="dv">4</span>)</span>
+<span id="cb8-40"><a href="#cb8-40" tabindex="-1"></a>optim_AG_BFGS_par <span class="ot">&lt;-</span> <span class="fu">t</span>(<span class="fu">as.data.frame</span>(optim_AG_BFGS_par))</span>
+<span id="cb8-41"><a href="#cb8-41" tabindex="-1"></a><span class="fu">rownames</span>(optim_AG_BFGS_par) <span class="ot">&lt;-</span> <span class="cn">NULL</span></span>
+<span id="cb8-42"><a href="#cb8-42" tabindex="-1"></a></span>
+<span id="cb8-43"><a href="#cb8-43" tabindex="-1"></a><span class="co"># Convergence status from the optimization</span></span>
+<span id="cb8-44"><a href="#cb8-44" tabindex="-1"></a>conv_status <span class="ot">&lt;-</span> optim_AG_BFGS<span class="sc">$</span>convergence</span>
+<span id="cb8-45"><a href="#cb8-45" tabindex="-1"></a>conv_status <span class="ot">&lt;-</span> <span class="fu">ifelse</span>(optim_AG_BFGS<span class="sc">$</span>convergence<span class="sc">==</span> <span class="dv">0</span>, <span class="st">&quot;Yes&quot;</span>, <span class="st">&quot;No&quot;</span>)</span></code></pre></div>
+<table>
+<caption>Convergence status and parameter estimates for <span class="math inline">\(\beta\)</span>ARMA(1,4) model using
+<code>stats::optim</code> package.</caption>
+<colgroup>
+<col width="18%" />
+<col width="10%" />
+<col width="12%" />
+<col width="12%" />
+<col width="10%" />
+<col width="12%" />
+<col width="12%" />
+<col width="12%" />
+</colgroup>
+<thead>
+<tr class="header">
+<th align="left">Convergence</th>
+<th align="left">alpha</th>
+<th align="left">varphi1</th>
+<th align="left">theta1</th>
+<th align="left">theta2</th>
+<th align="left">theta3</th>
+<th align="left">theta4</th>
+<th align="left">phi</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td align="left">No</td>
+<td align="left">-7e-04</td>
+<td align="left">0.9714</td>
+<td align="left">-0.6565</td>
+<td align="left">-0.179</td>
+<td align="left">-0.1123</td>
+<td align="left">-0.1432</td>
+<td align="left">22.2042</td>
+</tr>
+</tbody>
+</table>
+<p>To show this is not an issue with a single optimization package,
+we’ll try again using the <code>lbfgs</code> package, which provides an
+alternative implementation of the <code>L-BFGS</code> algorithm. The
+result is the same: the optimization fails to converge.</p>
+<div class="sourceCode" id="cb9"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb9-1"><a href="#cb9-1" tabindex="-1"></a><span class="co"># --------------------------------------------------------------------------- #</span></span>
+<span id="cb9-2"><a href="#cb9-2" tabindex="-1"></a><span class="co"># Perform CMLE using the lbfgs package</span></span>
+<span id="cb9-3"><a href="#cb9-3" tabindex="-1"></a><span class="co"># --------------------------------------------------------------------------- #</span></span>
+<span id="cb9-4"><a href="#cb9-4" tabindex="-1"></a>lbfgs_AG <span class="ot">&lt;-</span> lbfgs<span class="sc">::</span><span class="fu">lbfgs</span>(</span>
+<span id="cb9-5"><a href="#cb9-5" tabindex="-1"></a>  <span class="at">vars =</span> start_par,</span>
+<span id="cb9-6"><a href="#cb9-6" tabindex="-1"></a>  <span class="at">call_eval =</span> <span class="cf">function</span>(estimate) {</span>
+<span id="cb9-7"><a href="#cb9-7" tabindex="-1"></a>    (<span class="sc">-</span><span class="dv">1</span>) <span class="sc">*</span> <span class="fu">loglik_arma</span>(</span>
+<span id="cb9-8"><a href="#cb9-8" tabindex="-1"></a>      <span class="at">y =</span> y,</span>
+<span id="cb9-9"><a href="#cb9-9" tabindex="-1"></a>      <span class="at">ar =</span> ar_vec,</span>
+<span id="cb9-10"><a href="#cb9-10" tabindex="-1"></a>      <span class="at">ma =</span> ma_vec,</span>
+<span id="cb9-11"><a href="#cb9-11" tabindex="-1"></a>      <span class="at">alpha =</span> estimate[<span class="dv">1</span>],</span>
+<span id="cb9-12"><a href="#cb9-12" tabindex="-1"></a>      <span class="at">varphi =</span> estimate[<span class="dv">2</span><span class="sc">:</span>(p_len <span class="sc">+</span> <span class="dv">1</span>)],</span>
+<span id="cb9-13"><a href="#cb9-13" tabindex="-1"></a>      <span class="at">theta =</span> estimate[(p_len <span class="sc">+</span> <span class="dv">2</span>)<span class="sc">:</span>(p_len <span class="sc">+</span> q_len <span class="sc">+</span> <span class="dv">1</span>)],</span>
+<span id="cb9-14"><a href="#cb9-14" tabindex="-1"></a>      <span class="at">phi =</span> estimate[p_len <span class="sc">+</span> q_len <span class="sc">+</span> <span class="dv">2</span>],</span>
+<span id="cb9-15"><a href="#cb9-15" tabindex="-1"></a>      <span class="at">link =</span> link</span>
+<span id="cb9-16"><a href="#cb9-16" tabindex="-1"></a>    )</span>
+<span id="cb9-17"><a href="#cb9-17" tabindex="-1"></a>  },</span>
+<span id="cb9-18"><a href="#cb9-18" tabindex="-1"></a>  <span class="at">call_grad =</span> <span class="cf">function</span>(estimate) {</span>
+<span id="cb9-19"><a href="#cb9-19" tabindex="-1"></a>    (<span class="sc">-</span><span class="dv">1</span>) <span class="sc">*</span> <span class="fu">score_vector_arma</span>(</span>
+<span id="cb9-20"><a href="#cb9-20" tabindex="-1"></a>      <span class="at">y =</span> y,</span>
+<span id="cb9-21"><a href="#cb9-21" tabindex="-1"></a>      <span class="at">ar =</span> ar_vec,</span>
+<span id="cb9-22"><a href="#cb9-22" tabindex="-1"></a>      <span class="at">ma =</span> ma_vec,</span>
+<span id="cb9-23"><a href="#cb9-23" tabindex="-1"></a>      <span class="at">alpha =</span> estimate[<span class="dv">1</span>],</span>
+<span id="cb9-24"><a href="#cb9-24" tabindex="-1"></a>      <span class="at">varphi =</span> estimate[<span class="dv">2</span><span class="sc">:</span>(p_len <span class="sc">+</span> <span class="dv">1</span>)],</span>
+<span id="cb9-25"><a href="#cb9-25" tabindex="-1"></a>      <span class="at">theta =</span> estimate[(p_len <span class="sc">+</span> <span class="dv">2</span>)<span class="sc">:</span>(p_len <span class="sc">+</span> q_len <span class="sc">+</span> <span class="dv">1</span>)],</span>
+<span id="cb9-26"><a href="#cb9-26" tabindex="-1"></a>      <span class="at">phi =</span> estimate[p_len <span class="sc">+</span> q_len <span class="sc">+</span> <span class="dv">2</span>],</span>
+<span id="cb9-27"><a href="#cb9-27" tabindex="-1"></a>      <span class="at">link =</span> link</span>
+<span id="cb9-28"><a href="#cb9-28" tabindex="-1"></a>    )</span>
+<span id="cb9-29"><a href="#cb9-29" tabindex="-1"></a>  },</span>
+<span id="cb9-30"><a href="#cb9-30" tabindex="-1"></a>  <span class="at">invisible =</span> <span class="dv">1</span></span>
+<span id="cb9-31"><a href="#cb9-31" tabindex="-1"></a>)</span>
+<span id="cb9-32"><a href="#cb9-32" tabindex="-1"></a></span>
+<span id="cb9-33"><a href="#cb9-33" tabindex="-1"></a><span class="co"># `lbfgs()` returns an unnamed vector, unlike `optim()`. We assign names from </span></span>
+<span id="cb9-34"><a href="#cb9-34" tabindex="-1"></a><span class="co"># the `optim()` result.</span></span>
+<span id="cb9-35"><a href="#cb9-35" tabindex="-1"></a><span class="fu">names</span>(lbfgs_AG<span class="sc">$</span>par) <span class="ot">&lt;-</span> <span class="fu">names</span>(optim_AG_BFGS<span class="sc">$</span>par)</span>
+<span id="cb9-36"><a href="#cb9-36" tabindex="-1"></a></span>
+<span id="cb9-37"><a href="#cb9-37" tabindex="-1"></a><span class="co"># Display the final parameter estimates in a formatted table.</span></span>
+<span id="cb9-38"><a href="#cb9-38" tabindex="-1"></a>lbfgs_AG_par <span class="ot">&lt;-</span> <span class="fu">round</span>(lbfgs_AG<span class="sc">$</span>par, <span class="dv">4</span>)</span>
+<span id="cb9-39"><a href="#cb9-39" tabindex="-1"></a>lbfgs_AG_par <span class="ot">&lt;-</span> <span class="fu">t</span>(<span class="fu">as.data.frame</span>(lbfgs_AG_par))</span>
+<span id="cb9-40"><a href="#cb9-40" tabindex="-1"></a><span class="fu">rownames</span>(lbfgs_AG_par) <span class="ot">&lt;-</span> <span class="cn">NULL</span></span>
+<span id="cb9-41"><a href="#cb9-41" tabindex="-1"></a></span>
+<span id="cb9-42"><a href="#cb9-42" tabindex="-1"></a><span class="co"># Convergence status from the optimization</span></span>
+<span id="cb9-43"><a href="#cb9-43" tabindex="-1"></a>conv_status <span class="ot">&lt;-</span> lbfgs_AG<span class="sc">$</span>convergence</span>
+<span id="cb9-44"><a href="#cb9-44" tabindex="-1"></a>conv_status <span class="ot">&lt;-</span> <span class="fu">ifelse</span>(lbfgs_AG<span class="sc">$</span>convergence <span class="sc">==</span> <span class="dv">0</span>, <span class="st">&quot;Yes&quot;</span>, <span class="st">&quot;No&quot;</span>)</span></code></pre></div>
+<table>
+<caption>Parameter estimates for <span class="math inline">\(\beta\)</span>ARMA(1,4) model using
+<code>lbfgs::lbfgs</code> package.</caption>
+<colgroup>
+<col width="17%" />
+<col width="11%" />
+<col width="11%" />
+<col width="11%" />
+<col width="11%" />
+<col width="11%" />
+<col width="11%" />
+<col width="11%" />
+</colgroup>
+<thead>
+<tr class="header">
+<th align="left">Convergence</th>
+<th align="left">alpha</th>
+<th align="left">varphi1</th>
+<th align="left">theta1</th>
+<th align="left">theta2</th>
+<th align="left">theta3</th>
+<th align="left">theta4</th>
+<th align="left">phi</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td align="left">No</td>
+<td align="left">-0.0012</td>
+<td align="left">0.9349</td>
+<td align="left">-0.5379</td>
+<td align="left">-0.1784</td>
+<td align="left">-0.0474</td>
+<td align="left">-0.1701</td>
+<td align="left">20.2956</td>
+</tr>
+</tbody>
+</table>
+<p>As a final attempt with standard CMLE, we use the
+<code>L-BFGS-B</code> method. Even with this variation, the optimization
+still does not converge, confirming the numerical instability of the
+unpenalized log-likelihood function for this dataset.</p>
+<div class="sourceCode" id="cb10"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb10-1"><a href="#cb10-1" tabindex="-1"></a><span class="co"># -----------------------------------------------------------------------</span></span>
+<span id="cb10-2"><a href="#cb10-2" tabindex="-1"></a><span class="co"># Optimization: stats::optim(), Analytical Gradient, L-BFGS-B</span></span>
+<span id="cb10-3"><a href="#cb10-3" tabindex="-1"></a><span class="co"># -----------------------------------------------------------------------</span></span>
+<span id="cb10-4"><a href="#cb10-4" tabindex="-1"></a></span>
+<span id="cb10-5"><a href="#cb10-5" tabindex="-1"></a>start_par_LBFGSB <span class="ot">&lt;-</span> start_par</span>
+<span id="cb10-6"><a href="#cb10-6" tabindex="-1"></a>start_par_LBFGSB[<span class="dv">1</span>] <span class="ot">&lt;-</span> <span class="fu">abs</span>(start_par_LBFGSB[<span class="dv">1</span>])</span>
+<span id="cb10-7"><a href="#cb10-7" tabindex="-1"></a></span>
+<span id="cb10-8"><a href="#cb10-8" tabindex="-1"></a>optim_AG_LBFGSB <span class="ot">&lt;-</span> stats<span class="sc">::</span><span class="fu">optim</span>(</span>
+<span id="cb10-9"><a href="#cb10-9" tabindex="-1"></a>  <span class="at">par =</span> start_par_LBFGSB,</span>
+<span id="cb10-10"><a href="#cb10-10" tabindex="-1"></a>  <span class="at">fn =</span> <span class="cf">function</span>(estimate) {</span>
+<span id="cb10-11"><a href="#cb10-11" tabindex="-1"></a>    (<span class="sc">-</span><span class="dv">1</span>) <span class="sc">*</span> <span class="fu">loglik_arma</span>(</span>
+<span id="cb10-12"><a href="#cb10-12" tabindex="-1"></a>      <span class="at">y =</span> y,</span>
+<span id="cb10-13"><a href="#cb10-13" tabindex="-1"></a>      <span class="at">ar =</span> ar_vec,</span>
+<span id="cb10-14"><a href="#cb10-14" tabindex="-1"></a>      <span class="at">ma =</span> ma_vec,</span>
+<span id="cb10-15"><a href="#cb10-15" tabindex="-1"></a>      <span class="at">alpha =</span> estimate[<span class="dv">1</span>],</span>
+<span id="cb10-16"><a href="#cb10-16" tabindex="-1"></a>      <span class="at">varphi =</span> estimate[<span class="dv">2</span><span class="sc">:</span>(p_len <span class="sc">+</span> <span class="dv">1</span>)],</span>
+<span id="cb10-17"><a href="#cb10-17" tabindex="-1"></a>      <span class="at">theta =</span> estimate[(p_len <span class="sc">+</span> <span class="dv">2</span>)<span class="sc">:</span>(p_len <span class="sc">+</span> q_len <span class="sc">+</span> <span class="dv">1</span>)],</span>
+<span id="cb10-18"><a href="#cb10-18" tabindex="-1"></a>      <span class="at">phi =</span> estimate[p_len <span class="sc">+</span> q_len <span class="sc">+</span> <span class="dv">2</span>],</span>
+<span id="cb10-19"><a href="#cb10-19" tabindex="-1"></a>      <span class="at">link =</span> link</span>
+<span id="cb10-20"><a href="#cb10-20" tabindex="-1"></a>    )</span>
+<span id="cb10-21"><a href="#cb10-21" tabindex="-1"></a>  },</span>
+<span id="cb10-22"><a href="#cb10-22" tabindex="-1"></a>  <span class="at">gr =</span> <span class="cf">function</span>(estimate) {</span>
+<span id="cb10-23"><a href="#cb10-23" tabindex="-1"></a>    (<span class="sc">-</span><span class="dv">1</span>) <span class="sc">*</span> <span class="fu">score_vector_arma</span>(</span>
+<span id="cb10-24"><a href="#cb10-24" tabindex="-1"></a>      <span class="at">y =</span> y,</span>
+<span id="cb10-25"><a href="#cb10-25" tabindex="-1"></a>      <span class="at">ar =</span> ar_vec,</span>
+<span id="cb10-26"><a href="#cb10-26" tabindex="-1"></a>      <span class="at">ma =</span> ma_vec,</span>
+<span id="cb10-27"><a href="#cb10-27" tabindex="-1"></a>      <span class="at">alpha =</span> estimate[<span class="dv">1</span>],</span>
+<span id="cb10-28"><a href="#cb10-28" tabindex="-1"></a>      <span class="at">varphi =</span> estimate[<span class="dv">2</span><span class="sc">:</span>(p_len <span class="sc">+</span> <span class="dv">1</span>)],</span>
+<span id="cb10-29"><a href="#cb10-29" tabindex="-1"></a>      <span class="at">theta =</span> estimate[(p_len <span class="sc">+</span> <span class="dv">2</span>)<span class="sc">:</span>(p_len <span class="sc">+</span> q_len <span class="sc">+</span> <span class="dv">1</span>)],</span>
+<span id="cb10-30"><a href="#cb10-30" tabindex="-1"></a>      <span class="at">phi =</span> estimate[p_len <span class="sc">+</span> q_len <span class="sc">+</span> <span class="dv">2</span>],</span>
+<span id="cb10-31"><a href="#cb10-31" tabindex="-1"></a>      <span class="at">link =</span> link</span>
+<span id="cb10-32"><a href="#cb10-32" tabindex="-1"></a>    )</span>
+<span id="cb10-33"><a href="#cb10-33" tabindex="-1"></a>  },</span>
+<span id="cb10-34"><a href="#cb10-34" tabindex="-1"></a>  <span class="at">method =</span> <span class="st">&quot;L-BFGS-B&quot;</span></span>
+<span id="cb10-35"><a href="#cb10-35" tabindex="-1"></a>)</span>
+<span id="cb10-36"><a href="#cb10-36" tabindex="-1"></a></span>
+<span id="cb10-37"><a href="#cb10-37" tabindex="-1"></a><span class="co"># Display the final parameter estimates in a formatted table.</span></span>
+<span id="cb10-38"><a href="#cb10-38" tabindex="-1"></a>optim_AG_LBFGSB_par <span class="ot">&lt;-</span> <span class="fu">round</span>(optim_AG_LBFGSB<span class="sc">$</span>par, <span class="dv">4</span>)</span>
+<span id="cb10-39"><a href="#cb10-39" tabindex="-1"></a>optim_AG_LBFGSB_par <span class="ot">&lt;-</span> <span class="fu">t</span>(<span class="fu">as.data.frame</span>(optim_AG_LBFGSB_par))</span>
+<span id="cb10-40"><a href="#cb10-40" tabindex="-1"></a><span class="fu">rownames</span>(optim_AG_LBFGSB_par) <span class="ot">&lt;-</span> <span class="cn">NULL</span></span>
+<span id="cb10-41"><a href="#cb10-41" tabindex="-1"></a></span>
+<span id="cb10-42"><a href="#cb10-42" tabindex="-1"></a><span class="co"># Convergence status from the optimization</span></span>
+<span id="cb10-43"><a href="#cb10-43" tabindex="-1"></a>conv_status <span class="ot">&lt;-</span> optim_AG_LBFGSB<span class="sc">$</span>convergence</span>
+<span id="cb10-44"><a href="#cb10-44" tabindex="-1"></a>conv_status <span class="ot">&lt;-</span> <span class="fu">ifelse</span>(optim_AG_LBFGSB<span class="sc">$</span>convergence<span class="sc">==</span> <span class="dv">0</span>, <span class="st">&quot;Yes&quot;</span>, <span class="st">&quot;No&quot;</span>)</span></code></pre></div>
+<table>
+<caption>Parameter estimates for <span class="math inline">\(\beta\)</span>ARMA(1,4) model using
+<code>stats::optim</code> with <code>L-BFGS-B</code>
+algorithm.</caption>
+<colgroup>
+<col width="17%" />
+<col width="11%" />
+<col width="11%" />
+<col width="11%" />
+<col width="11%" />
+<col width="11%" />
+<col width="11%" />
+<col width="11%" />
+</colgroup>
+<thead>
+<tr class="header">
+<th align="left">Convergence</th>
+<th align="left">alpha</th>
+<th align="left">varphi1</th>
+<th align="left">theta1</th>
+<th align="left">theta2</th>
+<th align="left">theta3</th>
+<th align="left">theta4</th>
+<th align="left">phi</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td align="left">No</td>
+<td align="left">-0.0011</td>
+<td align="left">0.9739</td>
+<td align="left">-0.6384</td>
+<td align="left">-0.1826</td>
+<td align="left">-0.1847</td>
+<td align="left">-0.1058</td>
+<td align="left">20.3541</td>
+</tr>
+</tbody>
+</table>
+<p>Before applying the Jeffreys prior, we first define a helper
+function, <code>loglike_JeffreysPenalty</code>, that calculates the
+penalized log-likelihood.</p>
+<div class="sourceCode" id="cb11"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb11-1"><a href="#cb11-1" tabindex="-1"></a><span class="co"># ---------------------------------------------------------------------------</span></span>
+<span id="cb11-2"><a href="#cb11-2" tabindex="-1"></a><span class="co"># Jeffreys&#39;s prior, function to be optimized</span></span>
+<span id="cb11-3"><a href="#cb11-3" tabindex="-1"></a><span class="co"># ---------------------------------------------------------------------------</span></span>
+<span id="cb11-4"><a href="#cb11-4" tabindex="-1"></a>loglike_JeffreysPenalty <span class="ot">&lt;-</span> <span class="cf">function</span>(y, ar, ma,</span>
+<span id="cb11-5"><a href="#cb11-5" tabindex="-1"></a>                                    alpha, varphi, theta, phi, link) {</span>
+<span id="cb11-6"><a href="#cb11-6" tabindex="-1"></a>  <span class="co"># log-likelihood</span></span>
+<span id="cb11-7"><a href="#cb11-7" tabindex="-1"></a>  loglik <span class="ot">&lt;-</span> <span class="fu">loglik_arma</span>(</span>
+<span id="cb11-8"><a href="#cb11-8" tabindex="-1"></a>    <span class="at">y =</span> y,</span>
+<span id="cb11-9"><a href="#cb11-9" tabindex="-1"></a>    <span class="at">ar =</span> ar,</span>
+<span id="cb11-10"><a href="#cb11-10" tabindex="-1"></a>    <span class="at">ma =</span> ma,</span>
+<span id="cb11-11"><a href="#cb11-11" tabindex="-1"></a>    <span class="at">alpha =</span> alpha,</span>
+<span id="cb11-12"><a href="#cb11-12" tabindex="-1"></a>    <span class="at">varphi =</span> varphi,</span>
+<span id="cb11-13"><a href="#cb11-13" tabindex="-1"></a>    <span class="at">theta =</span> theta,</span>
+<span id="cb11-14"><a href="#cb11-14" tabindex="-1"></a>    <span class="at">phi =</span> phi,</span>
+<span id="cb11-15"><a href="#cb11-15" tabindex="-1"></a>    <span class="at">link =</span> link</span>
+<span id="cb11-16"><a href="#cb11-16" tabindex="-1"></a>  )</span>
+<span id="cb11-17"><a href="#cb11-17" tabindex="-1"></a></span>
+<span id="cb11-18"><a href="#cb11-18" tabindex="-1"></a>  <span class="co"># information matrix</span></span>
+<span id="cb11-19"><a href="#cb11-19" tabindex="-1"></a>  inf_matrix_list <span class="ot">&lt;-</span> <span class="fu">inf_matrix_arma</span>(</span>
+<span id="cb11-20"><a href="#cb11-20" tabindex="-1"></a>    <span class="at">y =</span> y,</span>
+<span id="cb11-21"><a href="#cb11-21" tabindex="-1"></a>    <span class="at">ar =</span> ar,</span>
+<span id="cb11-22"><a href="#cb11-22" tabindex="-1"></a>    <span class="at">ma =</span> ma,</span>
+<span id="cb11-23"><a href="#cb11-23" tabindex="-1"></a>    <span class="at">alpha =</span> alpha,</span>
+<span id="cb11-24"><a href="#cb11-24" tabindex="-1"></a>    <span class="at">varphi =</span> varphi,</span>
+<span id="cb11-25"><a href="#cb11-25" tabindex="-1"></a>    <span class="at">theta =</span> theta,</span>
+<span id="cb11-26"><a href="#cb11-26" tabindex="-1"></a>    <span class="at">phi =</span> phi,</span>
+<span id="cb11-27"><a href="#cb11-27" tabindex="-1"></a>    <span class="at">link =</span> link</span>
+<span id="cb11-28"><a href="#cb11-28" tabindex="-1"></a>  )</span>
+<span id="cb11-29"><a href="#cb11-29" tabindex="-1"></a></span>
+<span id="cb11-30"><a href="#cb11-30" tabindex="-1"></a>  inf_matrix <span class="ot">&lt;-</span> inf_matrix_list<span class="sc">$</span>fisher_info_mat</span>
+<span id="cb11-31"><a href="#cb11-31" tabindex="-1"></a></span>
+<span id="cb11-32"><a href="#cb11-32" tabindex="-1"></a>  <span class="co"># log of the Jeffreys prior</span></span>
+<span id="cb11-33"><a href="#cb11-33" tabindex="-1"></a>  logJefPen <span class="ot">&lt;-</span> <span class="fl">0.5</span> <span class="sc">*</span> <span class="fu">log</span>(<span class="fu">det</span>(inf_matrix))</span>
+<span id="cb11-34"><a href="#cb11-34" tabindex="-1"></a></span>
+<span id="cb11-35"><a href="#cb11-35" tabindex="-1"></a>  logJefPen_final <span class="ot">&lt;-</span> loglik <span class="sc">+</span> logJefPen</span>
+<span id="cb11-36"><a href="#cb11-36" tabindex="-1"></a></span>
+<span id="cb11-37"><a href="#cb11-37" tabindex="-1"></a>  <span class="fu">return</span>(logJefPen_final)</span>
+<span id="cb11-38"><a href="#cb11-38" tabindex="-1"></a>}</span></code></pre></div>
+<p>Using this helper function, we now perform the optimization with the
+Jeffreys prior, using the <code>BFGS</code> algorithm.</p>
+<div class="sourceCode" id="cb12"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb12-1"><a href="#cb12-1" tabindex="-1"></a><span class="co"># =============================================================================</span></span>
+<span id="cb12-2"><a href="#cb12-2" tabindex="-1"></a><span class="co"># Jeffreys&#39;s prior Penalty, BFGS</span></span>
+<span id="cb12-3"><a href="#cb12-3" tabindex="-1"></a><span class="co"># =============================================================================</span></span>
+<span id="cb12-4"><a href="#cb12-4" tabindex="-1"></a>optim_NG_BFGS_JEFFREYS <span class="ot">&lt;-</span> <span class="fu">optim</span>(</span>
+<span id="cb12-5"><a href="#cb12-5" tabindex="-1"></a>  <span class="at">par =</span> start_par,</span>
+<span id="cb12-6"><a href="#cb12-6" tabindex="-1"></a>  <span class="at">fn =</span> <span class="cf">function</span>(estimate) {</span>
+<span id="cb12-7"><a href="#cb12-7" tabindex="-1"></a>    (<span class="sc">-</span><span class="dv">1</span>) <span class="sc">*</span> <span class="fu">loglike_JeffreysPenalty</span>(</span>
+<span id="cb12-8"><a href="#cb12-8" tabindex="-1"></a>      <span class="at">y =</span> y,</span>
+<span id="cb12-9"><a href="#cb12-9" tabindex="-1"></a>      <span class="at">ar =</span> ar_vec,</span>
+<span id="cb12-10"><a href="#cb12-10" tabindex="-1"></a>      <span class="at">ma =</span> ma_vec,</span>
+<span id="cb12-11"><a href="#cb12-11" tabindex="-1"></a>      <span class="at">alpha =</span> estimate[<span class="dv">1</span>],</span>
+<span id="cb12-12"><a href="#cb12-12" tabindex="-1"></a>      <span class="at">varphi =</span> estimate[<span class="dv">2</span>],</span>
+<span id="cb12-13"><a href="#cb12-13" tabindex="-1"></a>      <span class="at">theta =</span> estimate[<span class="dv">3</span><span class="sc">:</span><span class="dv">6</span>],</span>
+<span id="cb12-14"><a href="#cb12-14" tabindex="-1"></a>      <span class="at">phi =</span> estimate[<span class="dv">7</span>],</span>
+<span id="cb12-15"><a href="#cb12-15" tabindex="-1"></a>      <span class="at">link =</span> link</span>
+<span id="cb12-16"><a href="#cb12-16" tabindex="-1"></a>    )</span>
+<span id="cb12-17"><a href="#cb12-17" tabindex="-1"></a>  },</span>
+<span id="cb12-18"><a href="#cb12-18" tabindex="-1"></a>  <span class="at">method =</span> <span class="st">&quot;BFGS&quot;</span></span>
+<span id="cb12-19"><a href="#cb12-19" tabindex="-1"></a>)</span>
+<span id="cb12-20"><a href="#cb12-20" tabindex="-1"></a></span>
+<span id="cb12-21"><a href="#cb12-21" tabindex="-1"></a><span class="co"># Display the final parameter estimates in a formatted table.</span></span>
+<span id="cb12-22"><a href="#cb12-22" tabindex="-1"></a>optim_NG_BFGS_JEFFREYS_par <span class="ot">&lt;-</span> <span class="fu">round</span>(optim_NG_BFGS_JEFFREYS<span class="sc">$</span>par, <span class="dv">4</span>)</span>
+<span id="cb12-23"><a href="#cb12-23" tabindex="-1"></a>optim_NG_BFGS_JEFFREYS_par <span class="ot">&lt;-</span> <span class="fu">t</span>(<span class="fu">as.data.frame</span>(optim_NG_BFGS_JEFFREYS_par))</span>
+<span id="cb12-24"><a href="#cb12-24" tabindex="-1"></a><span class="fu">rownames</span>(optim_NG_BFGS_JEFFREYS_par) <span class="ot">&lt;-</span> <span class="cn">NULL</span></span>
+<span id="cb12-25"><a href="#cb12-25" tabindex="-1"></a></span>
+<span id="cb12-26"><a href="#cb12-26" tabindex="-1"></a><span class="co"># Convergence status from the optimization</span></span>
+<span id="cb12-27"><a href="#cb12-27" tabindex="-1"></a>conv_status <span class="ot">&lt;-</span> optim_NG_BFGS_JEFFREYS<span class="sc">$</span>convergence</span>
+<span id="cb12-28"><a href="#cb12-28" tabindex="-1"></a>conv_status <span class="ot">&lt;-</span> <span class="fu">ifelse</span>(optim_NG_BFGS_JEFFREYS<span class="sc">$</span>convergence<span class="sc">==</span> <span class="dv">0</span>, <span class="st">&quot;Yes&quot;</span>, <span class="st">&quot;No&quot;</span>)</span></code></pre></div>
+<table>
+<caption>Parameter estimates for <span class="math inline">\(\beta\)</span>ARMA(1,4) model using Jeffreys’s
+Prior with <code>stats::optim</code>.</caption>
+<colgroup>
+<col width="18%" />
+<col width="9%" />
+<col width="12%" />
+<col width="12%" />
+<col width="12%" />
+<col width="12%" />
+<col width="12%" />
+<col width="12%" />
+</colgroup>
+<thead>
+<tr class="header">
+<th align="left">Convergence</th>
+<th align="left">alpha</th>
+<th align="left">varphi1</th>
+<th align="left">theta1</th>
+<th align="left">theta2</th>
+<th align="left">theta3</th>
+<th align="left">theta4</th>
+<th align="left">phi</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td align="left">Yes</td>
+<td align="left">9e-04</td>
+<td align="left">0.9641</td>
+<td align="left">-0.6349</td>
+<td align="left">-0.1477</td>
+<td align="left">-0.1627</td>
+<td align="left">-0.0833</td>
+<td align="left">22.5348</td>
+</tr>
+</tbody>
+</table>
+</div>
+<div id="ridge-penalization" class="section level3">
+<h3>Ridge Penalization</h3>
+<p>Enhancing Stability with Ridge Penalization</p>
+<p>Now, we apply the solution proposed in the paper: <strong>ridge
+penalization</strong>. This method introduces a small penalty to the
+log-likelihood function to enhance its curvature and stabilize the
+optimization. We use the recommended penalty value, <span class="math inline">\(\lambda = 1 / (n-a)^{0.90}\)</span>. The following
+chunks show that with this penalty, all three optimization algorithms
+now converge successfully.</p>
+<div class="sourceCode" id="cb13"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb13-1"><a href="#cb13-1" tabindex="-1"></a>optim_AG_BFGS_RIDGE <span class="ot">&lt;-</span> stats<span class="sc">::</span><span class="fu">optim</span>(</span>
+<span id="cb13-2"><a href="#cb13-2" tabindex="-1"></a>  <span class="at">par =</span> start_par,</span>
+<span id="cb13-3"><a href="#cb13-3" tabindex="-1"></a>  <span class="at">fn =</span> <span class="cf">function</span>(estimate) {</span>
+<span id="cb13-4"><a href="#cb13-4" tabindex="-1"></a>    (<span class="sc">-</span><span class="dv">1</span>) <span class="sc">*</span> <span class="fu">loglik_arma_ridge</span>(</span>
+<span id="cb13-5"><a href="#cb13-5" tabindex="-1"></a>      <span class="at">y =</span> y,</span>
+<span id="cb13-6"><a href="#cb13-6" tabindex="-1"></a>      <span class="at">ar =</span> ar_vec,</span>
+<span id="cb13-7"><a href="#cb13-7" tabindex="-1"></a>      <span class="at">ma =</span> ma_vec,</span>
+<span id="cb13-8"><a href="#cb13-8" tabindex="-1"></a>      <span class="at">alpha =</span> estimate[<span class="dv">1</span>],</span>
+<span id="cb13-9"><a href="#cb13-9" tabindex="-1"></a>      <span class="at">varphi =</span> estimate[<span class="dv">2</span><span class="sc">:</span>(p_len <span class="sc">+</span> <span class="dv">1</span>)],</span>
+<span id="cb13-10"><a href="#cb13-10" tabindex="-1"></a>      <span class="at">theta =</span> estimate[(p_len <span class="sc">+</span> <span class="dv">2</span>)<span class="sc">:</span>(p_len <span class="sc">+</span> q_len <span class="sc">+</span> <span class="dv">1</span>)],</span>
+<span id="cb13-11"><a href="#cb13-11" tabindex="-1"></a>      <span class="at">phi =</span> estimate[p_len <span class="sc">+</span> q_len <span class="sc">+</span> <span class="dv">2</span>],</span>
+<span id="cb13-12"><a href="#cb13-12" tabindex="-1"></a>      <span class="at">link =</span> link,</span>
+<span id="cb13-13"><a href="#cb13-13" tabindex="-1"></a>      <span class="at">penalty =</span> penalty</span>
+<span id="cb13-14"><a href="#cb13-14" tabindex="-1"></a>    )</span>
+<span id="cb13-15"><a href="#cb13-15" tabindex="-1"></a>  },</span>
+<span id="cb13-16"><a href="#cb13-16" tabindex="-1"></a>  <span class="at">gr =</span> <span class="cf">function</span>(estimate) {</span>
+<span id="cb13-17"><a href="#cb13-17" tabindex="-1"></a>    (<span class="sc">-</span><span class="dv">1</span>) <span class="sc">*</span> <span class="fu">score_vector_arma_ridge</span>(</span>
+<span id="cb13-18"><a href="#cb13-18" tabindex="-1"></a>      <span class="at">y =</span> y,</span>
+<span id="cb13-19"><a href="#cb13-19" tabindex="-1"></a>      <span class="at">ar =</span> ar_vec,</span>
+<span id="cb13-20"><a href="#cb13-20" tabindex="-1"></a>      <span class="at">ma =</span> ma_vec,</span>
+<span id="cb13-21"><a href="#cb13-21" tabindex="-1"></a>      <span class="at">alpha =</span> estimate[<span class="dv">1</span>],</span>
+<span id="cb13-22"><a href="#cb13-22" tabindex="-1"></a>      <span class="at">varphi =</span> estimate[<span class="dv">2</span><span class="sc">:</span>(p_len <span class="sc">+</span> <span class="dv">1</span>)],</span>
+<span id="cb13-23"><a href="#cb13-23" tabindex="-1"></a>      <span class="at">theta =</span> estimate[(p_len <span class="sc">+</span> <span class="dv">2</span>)<span class="sc">:</span>(p_len <span class="sc">+</span> q_len <span class="sc">+</span> <span class="dv">1</span>)],</span>
+<span id="cb13-24"><a href="#cb13-24" tabindex="-1"></a>      <span class="at">phi =</span> estimate[p_len <span class="sc">+</span> q_len <span class="sc">+</span> <span class="dv">2</span>],</span>
+<span id="cb13-25"><a href="#cb13-25" tabindex="-1"></a>      <span class="at">link =</span> link,</span>
+<span id="cb13-26"><a href="#cb13-26" tabindex="-1"></a>      <span class="at">penalty =</span> penalty</span>
+<span id="cb13-27"><a href="#cb13-27" tabindex="-1"></a>    )</span>
+<span id="cb13-28"><a href="#cb13-28" tabindex="-1"></a>  },</span>
+<span id="cb13-29"><a href="#cb13-29" tabindex="-1"></a>  <span class="at">method =</span> <span class="st">&quot;BFGS&quot;</span></span>
+<span id="cb13-30"><a href="#cb13-30" tabindex="-1"></a>)</span>
+<span id="cb13-31"><a href="#cb13-31" tabindex="-1"></a></span>
+<span id="cb13-32"><a href="#cb13-32" tabindex="-1"></a><span class="co"># Display the final parameter estimates in a formatted table.</span></span>
+<span id="cb13-33"><a href="#cb13-33" tabindex="-1"></a>optim_AG_BFGS_RIDGE_par <span class="ot">&lt;-</span> <span class="fu">round</span>(optim_AG_BFGS_RIDGE<span class="sc">$</span>par, <span class="dv">4</span>)</span>
+<span id="cb13-34"><a href="#cb13-34" tabindex="-1"></a>optim_AG_BFGS_RIDGE_par <span class="ot">&lt;-</span> <span class="fu">t</span>(<span class="fu">as.data.frame</span>(optim_AG_BFGS_RIDGE_par))</span>
+<span id="cb13-35"><a href="#cb13-35" tabindex="-1"></a><span class="fu">rownames</span>(optim_AG_BFGS_RIDGE_par) <span class="ot">&lt;-</span> <span class="cn">NULL</span></span>
+<span id="cb13-36"><a href="#cb13-36" tabindex="-1"></a></span>
+<span id="cb13-37"><a href="#cb13-37" tabindex="-1"></a><span class="co"># Convergence status from the optimization</span></span>
+<span id="cb13-38"><a href="#cb13-38" tabindex="-1"></a>conv_status <span class="ot">&lt;-</span> optim_AG_BFGS_RIDGE<span class="sc">$</span>convergence</span>
+<span id="cb13-39"><a href="#cb13-39" tabindex="-1"></a>conv_status <span class="ot">&lt;-</span> <span class="fu">ifelse</span>(optim_AG_BFGS_RIDGE<span class="sc">$</span>convergence<span class="sc">==</span> <span class="dv">0</span>, <span class="st">&quot;Yes&quot;</span>, <span class="st">&quot;No&quot;</span>)</span></code></pre></div>
+<table>
+<caption>Convergence status and parameter estimates for <span class="math inline">\(\beta\)</span>ARMA(1,4) model using <strong>Ridge
+Penalyzation</strong> with <code>stats::optim</code>.</caption>
+<colgroup>
+<col width="18%" />
+<col width="10%" />
+<col width="12%" />
+<col width="10%" />
+<col width="10%" />
+<col width="10%" />
+<col width="12%" />
+<col width="12%" />
+</colgroup>
+<thead>
+<tr class="header">
+<th align="left">Convergence</th>
+<th align="left">alpha</th>
+<th align="left">varphi1</th>
+<th align="left">theta1</th>
+<th align="left">theta2</th>
+<th align="left">theta3</th>
+<th align="left">theta4</th>
+<th align="left">phi</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td align="left">Yes</td>
+<td align="left">-0.005</td>
+<td align="left">0.3924</td>
+<td align="left">0.0114</td>
+<td align="left">0.0832</td>
+<td align="left">0.0191</td>
+<td align="left">-0.0569</td>
+<td align="left">21.2682</td>
+</tr>
+</tbody>
+</table>
+<p>The following chunk implements the same ridge-penalized estimation,
+this time using the <code>L-BFGS-B</code> algorithm.</p>
+<div class="sourceCode" id="cb14"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb14-1"><a href="#cb14-1" tabindex="-1"></a>optim_AG_LBFGSB_RIDGE <span class="ot">&lt;-</span> stats<span class="sc">::</span><span class="fu">optim</span>(</span>
+<span id="cb14-2"><a href="#cb14-2" tabindex="-1"></a>  <span class="at">par =</span> start_par,</span>
+<span id="cb14-3"><a href="#cb14-3" tabindex="-1"></a>  <span class="at">fn =</span> <span class="cf">function</span>(estimate) {</span>
+<span id="cb14-4"><a href="#cb14-4" tabindex="-1"></a>    (<span class="sc">-</span><span class="dv">1</span>) <span class="sc">*</span> <span class="fu">loglik_arma_ridge</span>(</span>
+<span id="cb14-5"><a href="#cb14-5" tabindex="-1"></a>      <span class="at">y =</span> y,</span>
+<span id="cb14-6"><a href="#cb14-6" tabindex="-1"></a>      <span class="at">ar =</span> ar_vec,</span>
+<span id="cb14-7"><a href="#cb14-7" tabindex="-1"></a>      <span class="at">ma =</span> ma_vec,</span>
+<span id="cb14-8"><a href="#cb14-8" tabindex="-1"></a>      <span class="at">alpha =</span> estimate[<span class="dv">1</span>],</span>
+<span id="cb14-9"><a href="#cb14-9" tabindex="-1"></a>      <span class="at">varphi =</span> estimate[<span class="dv">2</span><span class="sc">:</span>(p_len <span class="sc">+</span> <span class="dv">1</span>)],</span>
+<span id="cb14-10"><a href="#cb14-10" tabindex="-1"></a>      <span class="at">theta =</span> estimate[(p_len <span class="sc">+</span> <span class="dv">2</span>)<span class="sc">:</span>(p_len <span class="sc">+</span> q_len <span class="sc">+</span> <span class="dv">1</span>)],</span>
+<span id="cb14-11"><a href="#cb14-11" tabindex="-1"></a>      <span class="at">phi =</span> estimate[p_len <span class="sc">+</span> q_len <span class="sc">+</span> <span class="dv">2</span>],</span>
+<span id="cb14-12"><a href="#cb14-12" tabindex="-1"></a>      <span class="at">link =</span> link,</span>
+<span id="cb14-13"><a href="#cb14-13" tabindex="-1"></a>      <span class="at">penalty =</span> penalty</span>
+<span id="cb14-14"><a href="#cb14-14" tabindex="-1"></a>    )</span>
+<span id="cb14-15"><a href="#cb14-15" tabindex="-1"></a>  },</span>
+<span id="cb14-16"><a href="#cb14-16" tabindex="-1"></a>  <span class="at">gr =</span> <span class="cf">function</span>(estimate) {</span>
+<span id="cb14-17"><a href="#cb14-17" tabindex="-1"></a>    (<span class="sc">-</span><span class="dv">1</span>) <span class="sc">*</span> <span class="fu">score_vector_arma_ridge</span>(</span>
+<span id="cb14-18"><a href="#cb14-18" tabindex="-1"></a>      <span class="at">y =</span> y,</span>
+<span id="cb14-19"><a href="#cb14-19" tabindex="-1"></a>      <span class="at">ar =</span> ar_vec,</span>
+<span id="cb14-20"><a href="#cb14-20" tabindex="-1"></a>      <span class="at">ma =</span> ma_vec,</span>
+<span id="cb14-21"><a href="#cb14-21" tabindex="-1"></a>      <span class="at">alpha =</span> estimate[<span class="dv">1</span>],</span>
+<span id="cb14-22"><a href="#cb14-22" tabindex="-1"></a>      <span class="at">varphi =</span> estimate[<span class="dv">2</span><span class="sc">:</span>(p_len <span class="sc">+</span> <span class="dv">1</span>)],</span>
+<span id="cb14-23"><a href="#cb14-23" tabindex="-1"></a>      <span class="at">theta =</span> estimate[(p_len <span class="sc">+</span> <span class="dv">2</span>)<span class="sc">:</span>(p_len <span class="sc">+</span> q_len <span class="sc">+</span> <span class="dv">1</span>)],</span>
+<span id="cb14-24"><a href="#cb14-24" tabindex="-1"></a>      <span class="at">phi =</span> estimate[p_len <span class="sc">+</span> q_len <span class="sc">+</span> <span class="dv">2</span>],</span>
+<span id="cb14-25"><a href="#cb14-25" tabindex="-1"></a>      <span class="at">link =</span> link,</span>
+<span id="cb14-26"><a href="#cb14-26" tabindex="-1"></a>      <span class="at">penalty =</span> penalty</span>
+<span id="cb14-27"><a href="#cb14-27" tabindex="-1"></a>    )</span>
+<span id="cb14-28"><a href="#cb14-28" tabindex="-1"></a>  },</span>
+<span id="cb14-29"><a href="#cb14-29" tabindex="-1"></a>  </span>
+<span id="cb14-30"><a href="#cb14-30" tabindex="-1"></a>  <span class="at">method =</span> <span class="st">&quot;L-BFGS-B&quot;</span></span>
+<span id="cb14-31"><a href="#cb14-31" tabindex="-1"></a>)</span>
+<span id="cb14-32"><a href="#cb14-32" tabindex="-1"></a><span class="co"># Display the final parameter estimates in a formatted table.</span></span>
+<span id="cb14-33"><a href="#cb14-33" tabindex="-1"></a>optim_AG_LBFGSB_RIDGE_par <span class="ot">&lt;-</span> <span class="fu">round</span>(optim_AG_LBFGSB_RIDGE<span class="sc">$</span>par, <span class="dv">4</span>)</span>
+<span id="cb14-34"><a href="#cb14-34" tabindex="-1"></a>optim_AG_LBFGSB_RIDGE_par <span class="ot">&lt;-</span> <span class="fu">t</span>(<span class="fu">as.data.frame</span>(optim_AG_LBFGSB_RIDGE_par))</span>
+<span id="cb14-35"><a href="#cb14-35" tabindex="-1"></a><span class="fu">rownames</span>(optim_AG_LBFGSB_RIDGE_par) <span class="ot">&lt;-</span> <span class="cn">NULL</span></span>
+<span id="cb14-36"><a href="#cb14-36" tabindex="-1"></a></span>
+<span id="cb14-37"><a href="#cb14-37" tabindex="-1"></a><span class="co"># Convergence status from the optimization</span></span>
+<span id="cb14-38"><a href="#cb14-38" tabindex="-1"></a>conv_status <span class="ot">&lt;-</span> optim_AG_LBFGSB_RIDGE<span class="sc">$</span>convergence</span>
+<span id="cb14-39"><a href="#cb14-39" tabindex="-1"></a>conv_status <span class="ot">&lt;-</span> <span class="fu">ifelse</span>(optim_AG_LBFGSB_RIDGE<span class="sc">$</span>convergence <span class="sc">==</span> <span class="dv">0</span>, <span class="st">&quot;Yes&quot;</span>, <span class="st">&quot;No&quot;</span>)</span></code></pre></div>
+<table>
+<caption>Parameter estimates for <span class="math inline">\(\beta\)</span>ARMA(1,4) model using Ridge
+Penalyzation with <code>stats::optim</code> with
+<code>L-BFGS-B</code>.</caption>
+<colgroup>
+<col width="18%" />
+<col width="10%" />
+<col width="12%" />
+<col width="10%" />
+<col width="10%" />
+<col width="10%" />
+<col width="12%" />
+<col width="12%" />
+</colgroup>
+<thead>
+<tr class="header">
+<th align="left">Convergence</th>
+<th align="left">alpha</th>
+<th align="left">varphi1</th>
+<th align="left">theta1</th>
+<th align="left">theta2</th>
+<th align="left">theta3</th>
+<th align="left">theta4</th>
+<th align="left">phi</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td align="left">Yes</td>
+<td align="left">-0.005</td>
+<td align="left">0.3924</td>
+<td align="left">0.0114</td>
+<td align="left">0.0832</td>
+<td align="left">0.0191</td>
+<td align="left">-0.0569</td>
+<td align="left">21.2676</td>
+</tr>
+</tbody>
+</table>
+<p>Finally, we apply the ridge penalization using the <code>lbfgs</code>
+package’s implementation of the <code>L-BFGS</code> algorithm.</p>
+<div class="sourceCode" id="cb15"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb15-1"><a href="#cb15-1" tabindex="-1"></a>lbfgs_AG_RIDGE <span class="ot">&lt;-</span> lbfgs<span class="sc">::</span><span class="fu">lbfgs</span>(</span>
+<span id="cb15-2"><a href="#cb15-2" tabindex="-1"></a>  <span class="at">vars =</span> start_par,</span>
+<span id="cb15-3"><a href="#cb15-3" tabindex="-1"></a>  <span class="at">call_eval =</span> <span class="cf">function</span>(estimate) {</span>
+<span id="cb15-4"><a href="#cb15-4" tabindex="-1"></a>    (<span class="sc">-</span><span class="dv">1</span>) <span class="sc">*</span> <span class="fu">loglik_arma_ridge</span>(</span>
+<span id="cb15-5"><a href="#cb15-5" tabindex="-1"></a>      <span class="at">y =</span> y,</span>
+<span id="cb15-6"><a href="#cb15-6" tabindex="-1"></a>      <span class="at">ar =</span> ar_vec,</span>
+<span id="cb15-7"><a href="#cb15-7" tabindex="-1"></a>      <span class="at">ma =</span> ma_vec,</span>
+<span id="cb15-8"><a href="#cb15-8" tabindex="-1"></a>      <span class="at">alpha =</span> estimate[<span class="dv">1</span>],</span>
+<span id="cb15-9"><a href="#cb15-9" tabindex="-1"></a>      <span class="at">varphi =</span> estimate[<span class="dv">2</span><span class="sc">:</span>(p_len <span class="sc">+</span> <span class="dv">1</span>)],</span>
+<span id="cb15-10"><a href="#cb15-10" tabindex="-1"></a>      <span class="at">theta =</span> estimate[(p_len <span class="sc">+</span> <span class="dv">2</span>)<span class="sc">:</span>(p_len <span class="sc">+</span> q_len <span class="sc">+</span> <span class="dv">1</span>)],</span>
+<span id="cb15-11"><a href="#cb15-11" tabindex="-1"></a>      <span class="at">phi =</span> estimate[p_len <span class="sc">+</span> q_len <span class="sc">+</span> <span class="dv">2</span>],</span>
+<span id="cb15-12"><a href="#cb15-12" tabindex="-1"></a>      <span class="at">link =</span> link,</span>
+<span id="cb15-13"><a href="#cb15-13" tabindex="-1"></a>      <span class="at">penalty =</span> penalty</span>
+<span id="cb15-14"><a href="#cb15-14" tabindex="-1"></a>    )</span>
+<span id="cb15-15"><a href="#cb15-15" tabindex="-1"></a>  },</span>
+<span id="cb15-16"><a href="#cb15-16" tabindex="-1"></a>  <span class="at">call_grad =</span> <span class="cf">function</span>(estimate) {</span>
+<span id="cb15-17"><a href="#cb15-17" tabindex="-1"></a>    (<span class="sc">-</span><span class="dv">1</span>) <span class="sc">*</span> <span class="fu">score_vector_arma_ridge</span>(</span>
+<span id="cb15-18"><a href="#cb15-18" tabindex="-1"></a>      <span class="at">y =</span> y,</span>
+<span id="cb15-19"><a href="#cb15-19" tabindex="-1"></a>      <span class="at">ar =</span> ar_vec,</span>
+<span id="cb15-20"><a href="#cb15-20" tabindex="-1"></a>      <span class="at">ma =</span> ma_vec,</span>
+<span id="cb15-21"><a href="#cb15-21" tabindex="-1"></a>      <span class="at">alpha =</span> estimate[<span class="dv">1</span>],</span>
+<span id="cb15-22"><a href="#cb15-22" tabindex="-1"></a>      <span class="at">varphi =</span> estimate[<span class="dv">2</span><span class="sc">:</span>(p_len <span class="sc">+</span> <span class="dv">1</span>)],</span>
+<span id="cb15-23"><a href="#cb15-23" tabindex="-1"></a>      <span class="at">theta =</span> estimate[(p_len <span class="sc">+</span> <span class="dv">2</span>)<span class="sc">:</span>(p_len <span class="sc">+</span> q_len <span class="sc">+</span> <span class="dv">1</span>)],</span>
+<span id="cb15-24"><a href="#cb15-24" tabindex="-1"></a>      <span class="at">phi =</span> estimate[p_len <span class="sc">+</span> q_len <span class="sc">+</span> <span class="dv">2</span>],</span>
+<span id="cb15-25"><a href="#cb15-25" tabindex="-1"></a>      <span class="at">link =</span> link,</span>
+<span id="cb15-26"><a href="#cb15-26" tabindex="-1"></a>      <span class="at">penalty =</span> penalty</span>
+<span id="cb15-27"><a href="#cb15-27" tabindex="-1"></a>    )</span>
+<span id="cb15-28"><a href="#cb15-28" tabindex="-1"></a>  },</span>
+<span id="cb15-29"><a href="#cb15-29" tabindex="-1"></a>  <span class="at">invisible =</span> <span class="dv">1</span>,</span>
+<span id="cb15-30"><a href="#cb15-30" tabindex="-1"></a>)</span>
+<span id="cb15-31"><a href="#cb15-31" tabindex="-1"></a></span>
+<span id="cb15-32"><a href="#cb15-32" tabindex="-1"></a><span class="co"># `lbfgs()` returns an unnamed vector, unlike `optim()`. We assign names from </span></span>
+<span id="cb15-33"><a href="#cb15-33" tabindex="-1"></a><span class="co"># the `optim()` result.</span></span>
+<span id="cb15-34"><a href="#cb15-34" tabindex="-1"></a><span class="fu">names</span>(lbfgs_AG_RIDGE<span class="sc">$</span>par) <span class="ot">&lt;-</span> <span class="fu">names</span>(optim_AG_BFGS<span class="sc">$</span>par)</span>
+<span id="cb15-35"><a href="#cb15-35" tabindex="-1"></a></span>
+<span id="cb15-36"><a href="#cb15-36" tabindex="-1"></a><span class="co"># Display the final parameter estimates in a formatted table.</span></span>
+<span id="cb15-37"><a href="#cb15-37" tabindex="-1"></a>lbfgs_AG_RIDGE_par <span class="ot">&lt;-</span> <span class="fu">round</span>(lbfgs_AG_RIDGE<span class="sc">$</span>par, <span class="dv">4</span>)</span>
+<span id="cb15-38"><a href="#cb15-38" tabindex="-1"></a>lbfgs_AG_RIDGE_par <span class="ot">&lt;-</span> <span class="fu">t</span>(<span class="fu">as.data.frame</span>(lbfgs_AG_RIDGE_par))</span>
+<span id="cb15-39"><a href="#cb15-39" tabindex="-1"></a><span class="fu">rownames</span>(lbfgs_AG_RIDGE_par) <span class="ot">&lt;-</span> <span class="cn">NULL</span></span>
+<span id="cb15-40"><a href="#cb15-40" tabindex="-1"></a></span>
+<span id="cb15-41"><a href="#cb15-41" tabindex="-1"></a><span class="co"># Convergence status from the optimization</span></span>
+<span id="cb15-42"><a href="#cb15-42" tabindex="-1"></a>conv_status <span class="ot">&lt;-</span> lbfgs_AG_RIDGE<span class="sc">$</span>convergence</span>
+<span id="cb15-43"><a href="#cb15-43" tabindex="-1"></a>conv_status <span class="ot">&lt;-</span> <span class="fu">ifelse</span>(lbfgs_AG_RIDGE<span class="sc">$</span>convergence <span class="sc">==</span> <span class="dv">0</span>, <span class="st">&quot;Yes&quot;</span>, <span class="st">&quot;No&quot;</span>)</span></code></pre></div>
+<table>
+<caption>Parameter estimates for <span class="math inline">\(\beta\)</span>ARMA(1,4) model using Ridge
+Penalyzation with <code>lbfgs::lbfgs</code>.</caption>
+<colgroup>
+<col width="18%" />
+<col width="10%" />
+<col width="12%" />
+<col width="10%" />
+<col width="10%" />
+<col width="10%" />
+<col width="12%" />
+<col width="12%" />
+</colgroup>
+<thead>
+<tr class="header">
+<th align="left">Convergence</th>
+<th align="left">alpha</th>
+<th align="left">varphi1</th>
+<th align="left">theta1</th>
+<th align="left">theta2</th>
+<th align="left">theta3</th>
+<th align="left">theta4</th>
+<th align="left">phi</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td align="left">Yes</td>
+<td align="left">-0.005</td>
+<td align="left">0.3924</td>
+<td align="left">0.0114</td>
+<td align="left">0.0832</td>
+<td align="left">0.0191</td>
+<td align="left">-0.0569</td>
+<td align="left">21.2682</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<div id="comparison-of-results" class="section level2">
+<h2>Comparison of Results</h2>
+<p>The tables below summarize all results, corresponding to Table 1
+(unpenalized) and Table 3 (penalized) in the paper. The key takeaway is
+clear: all unpenalized CMLE methods failed to converge, producing
+implausible parameter estimates. In contrast, all methods using ridge
+penalization converged successfully, yielding estimates very close to
+the true parameter values <span class="math inline">\((\varphi_1 =
+0.4)\)</span> and all <span class="math inline">\(\theta_j = 0\)</span>
+for <span class="math inline">\(j = 1, \dots, 4\)</span>.</p>
+<div class="sourceCode" id="cb16"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb16-1"><a href="#cb16-1" tabindex="-1"></a><span class="co"># =============================================================================</span></span>
+<span id="cb16-2"><a href="#cb16-2" tabindex="-1"></a><span class="co"># Create data frame for each individual result.</span></span>
+<span id="cb16-3"><a href="#cb16-3" tabindex="-1"></a><span class="co"># =============================================================================</span></span>
+<span id="cb16-4"><a href="#cb16-4" tabindex="-1"></a>res1 <span class="ot">&lt;-</span> <span class="fu">data.frame</span>(<span class="at">Package =</span> <span class="st">&quot;optim&quot;</span>, </span>
+<span id="cb16-5"><a href="#cb16-5" tabindex="-1"></a>                   <span class="at">Algorithm =</span> <span class="st">&quot;BFGS&quot;</span>, </span>
+<span id="cb16-6"><a href="#cb16-6" tabindex="-1"></a>                   <span class="at">Penalty =</span> <span class="st">&quot;No&quot;</span>, </span>
+<span id="cb16-7"><a href="#cb16-7" tabindex="-1"></a>                   <span class="at">Conv =</span> optim_AG_BFGS<span class="sc">$</span>convergence, </span>
+<span id="cb16-8"><a href="#cb16-8" tabindex="-1"></a>                   <span class="fu">data.frame</span>(<span class="fu">t</span>(optim_AG_BFGS<span class="sc">$</span>par)))</span>
+<span id="cb16-9"><a href="#cb16-9" tabindex="-1"></a></span>
+<span id="cb16-10"><a href="#cb16-10" tabindex="-1"></a>res2 <span class="ot">&lt;-</span> <span class="fu">data.frame</span>(<span class="at">Package =</span> <span class="st">&quot;optim&quot;</span>, </span>
+<span id="cb16-11"><a href="#cb16-11" tabindex="-1"></a>                   <span class="at">Algorithm =</span> <span class="st">&quot;L-BFGS-B&quot;</span>, </span>
+<span id="cb16-12"><a href="#cb16-12" tabindex="-1"></a>                   <span class="at">Penalty =</span> <span class="st">&quot;No&quot;</span>, </span>
+<span id="cb16-13"><a href="#cb16-13" tabindex="-1"></a>                   <span class="at">Conv =</span> optim_AG_LBFGSB<span class="sc">$</span>convergence, </span>
+<span id="cb16-14"><a href="#cb16-14" tabindex="-1"></a>                   <span class="fu">data.frame</span>(<span class="fu">t</span>(optim_AG_LBFGSB<span class="sc">$</span>par)))</span>
+<span id="cb16-15"><a href="#cb16-15" tabindex="-1"></a></span>
+<span id="cb16-16"><a href="#cb16-16" tabindex="-1"></a>res3 <span class="ot">&lt;-</span> <span class="fu">data.frame</span>(<span class="at">Package =</span> <span class="st">&quot;lbfgs&quot;</span>, </span>
+<span id="cb16-17"><a href="#cb16-17" tabindex="-1"></a>                   <span class="at">Algorithm =</span> <span class="st">&quot;L-BFGS&quot;</span>, </span>
+<span id="cb16-18"><a href="#cb16-18" tabindex="-1"></a>                   <span class="at">Penalty =</span> <span class="st">&quot;No&quot;</span>, </span>
+<span id="cb16-19"><a href="#cb16-19" tabindex="-1"></a>                   <span class="at">Conv =</span> lbfgs_AG<span class="sc">$</span>convergence, </span>
+<span id="cb16-20"><a href="#cb16-20" tabindex="-1"></a>                   <span class="fu">data.frame</span>(<span class="fu">t</span>(lbfgs_AG<span class="sc">$</span>par)))</span>
+<span id="cb16-21"><a href="#cb16-21" tabindex="-1"></a></span>
+<span id="cb16-22"><a href="#cb16-22" tabindex="-1"></a>res4 <span class="ot">&lt;-</span> <span class="fu">data.frame</span>(<span class="at">Package =</span> <span class="st">&quot;optim&quot;</span>, </span>
+<span id="cb16-23"><a href="#cb16-23" tabindex="-1"></a>                   <span class="at">Algorithm =</span> <span class="st">&quot;BFGS&quot;</span>, </span>
+<span id="cb16-24"><a href="#cb16-24" tabindex="-1"></a>                   <span class="at">Penalty =</span> <span class="st">&quot;Jeffreys&quot;</span>, </span>
+<span id="cb16-25"><a href="#cb16-25" tabindex="-1"></a>                   <span class="at">Conv =</span> optim_NG_BFGS_JEFFREYS<span class="sc">$</span>convergence,</span>
+<span id="cb16-26"><a href="#cb16-26" tabindex="-1"></a>                   <span class="fu">data.frame</span>(<span class="fu">t</span>(optim_NG_BFGS_JEFFREYS<span class="sc">$</span>par)))</span>
+<span id="cb16-27"><a href="#cb16-27" tabindex="-1"></a></span>
+<span id="cb16-28"><a href="#cb16-28" tabindex="-1"></a>res5 <span class="ot">&lt;-</span> <span class="fu">data.frame</span>(<span class="at">Package =</span> <span class="st">&quot;optim&quot;</span>, </span>
+<span id="cb16-29"><a href="#cb16-29" tabindex="-1"></a>                   <span class="at">Algorithm =</span> <span class="st">&quot;BFGS&quot;</span>, </span>
+<span id="cb16-30"><a href="#cb16-30" tabindex="-1"></a>                   <span class="at">Penalty =</span> <span class="st">&quot;Ridge&quot;</span>, </span>
+<span id="cb16-31"><a href="#cb16-31" tabindex="-1"></a>                   <span class="at">Conv =</span> optim_AG_BFGS_RIDGE<span class="sc">$</span>convergence, </span>
+<span id="cb16-32"><a href="#cb16-32" tabindex="-1"></a>                   <span class="fu">data.frame</span>(<span class="fu">t</span>(optim_AG_BFGS_RIDGE<span class="sc">$</span>par)))</span>
+<span id="cb16-33"><a href="#cb16-33" tabindex="-1"></a></span>
+<span id="cb16-34"><a href="#cb16-34" tabindex="-1"></a>res6 <span class="ot">&lt;-</span> <span class="fu">data.frame</span>(<span class="at">Package =</span> <span class="st">&quot;optim&quot;</span>, </span>
+<span id="cb16-35"><a href="#cb16-35" tabindex="-1"></a>                   <span class="at">Algorithm =</span> <span class="st">&quot;L-BFGS-B&quot;</span>, </span>
+<span id="cb16-36"><a href="#cb16-36" tabindex="-1"></a>                   <span class="at">Penalty =</span> <span class="st">&quot;Ridge&quot;</span>, </span>
+<span id="cb16-37"><a href="#cb16-37" tabindex="-1"></a>                   <span class="at">Conv =</span> optim_AG_LBFGSB_RIDGE<span class="sc">$</span>convergence,</span>
+<span id="cb16-38"><a href="#cb16-38" tabindex="-1"></a>                   <span class="fu">data.frame</span>(<span class="fu">t</span>(optim_AG_LBFGSB_RIDGE<span class="sc">$</span>par)))</span>
+<span id="cb16-39"><a href="#cb16-39" tabindex="-1"></a></span>
+<span id="cb16-40"><a href="#cb16-40" tabindex="-1"></a>res7 <span class="ot">&lt;-</span> <span class="fu">data.frame</span>(<span class="at">Package =</span> <span class="st">&quot;lbfgs&quot;</span>, </span>
+<span id="cb16-41"><a href="#cb16-41" tabindex="-1"></a>                   <span class="at">Algorithm =</span> <span class="st">&quot;L-BFGS&quot;</span>, </span>
+<span id="cb16-42"><a href="#cb16-42" tabindex="-1"></a>                   <span class="at">Penalty =</span> <span class="st">&quot;Ridge&quot;</span>, </span>
+<span id="cb16-43"><a href="#cb16-43" tabindex="-1"></a>                   <span class="at">Conv =</span> lbfgs_AG_RIDGE<span class="sc">$</span>convergence, </span>
+<span id="cb16-44"><a href="#cb16-44" tabindex="-1"></a>                   <span class="fu">data.frame</span>(<span class="fu">t</span>(lbfgs_AG_RIDGE<span class="sc">$</span>par)))</span>
+<span id="cb16-45"><a href="#cb16-45" tabindex="-1"></a></span>
+<span id="cb16-46"><a href="#cb16-46" tabindex="-1"></a><span class="co"># The `lbfgs()` function returns unnamed parameters, which creates default </span></span>
+<span id="cb16-47"><a href="#cb16-47" tabindex="-1"></a><span class="co"># column names. To ensure `rbind` works correctly, we use the column names </span></span>
+<span id="cb16-48"><a href="#cb16-48" tabindex="-1"></a><span class="co"># for the lbfgs results (res3, res7) to match the names from the optim results </span></span>
+<span id="cb16-49"><a href="#cb16-49" tabindex="-1"></a><span class="co"># (res1).</span></span>
+<span id="cb16-50"><a href="#cb16-50" tabindex="-1"></a><span class="fu">colnames</span>(res3)[<span class="dv">5</span><span class="sc">:</span><span class="dv">11</span>] <span class="ot">&lt;-</span> <span class="fu">colnames</span>(res1)[<span class="dv">5</span><span class="sc">:</span><span class="dv">11</span>]</span>
+<span id="cb16-51"><a href="#cb16-51" tabindex="-1"></a><span class="fu">colnames</span>(res7)[<span class="dv">5</span><span class="sc">:</span><span class="dv">11</span>] <span class="ot">&lt;-</span> <span class="fu">colnames</span>(res1)[<span class="dv">5</span><span class="sc">:</span><span class="dv">11</span>]</span>
+<span id="cb16-52"><a href="#cb16-52" tabindex="-1"></a></span>
+<span id="cb16-53"><a href="#cb16-53" tabindex="-1"></a><span class="co"># Combine all individual result into a single data frame.</span></span>
+<span id="cb16-54"><a href="#cb16-54" tabindex="-1"></a>estimates_final <span class="ot">&lt;-</span> <span class="fu">rbind</span>(res1, res2, res3, res4, res5, res6, res7)</span>
+<span id="cb16-55"><a href="#cb16-55" tabindex="-1"></a>estimates_final[,<span class="dv">5</span><span class="sc">:</span><span class="dv">11</span>] <span class="ot">&lt;-</span> <span class="fu">round</span>(estimates_final[,<span class="dv">5</span><span class="sc">:</span><span class="dv">11</span>], <span class="dv">4</span>)</span>
+<span id="cb16-56"><a href="#cb16-56" tabindex="-1"></a></span>
+<span id="cb16-57"><a href="#cb16-57" tabindex="-1"></a><span class="co"># Create a clear &quot;Yes/No&quot; column for convergence and add it to the data frame</span></span>
+<span id="cb16-58"><a href="#cb16-58" tabindex="-1"></a>estimates_final<span class="sc">$</span><span class="st">`</span><span class="at">Conv.</span><span class="st">`</span> <span class="ot">&lt;-</span> <span class="fu">ifelse</span>(estimates_final<span class="sc">$</span>Conv <span class="sc">==</span> <span class="dv">0</span>, <span class="st">&quot;Yes&quot;</span>, <span class="st">&quot;No&quot;</span>)</span></code></pre></div>
+<p>In the following tables, the algorithms are denoted as follows: B
+(BFGS), LB (L-BFGS), L (L-BFGS-B), B<span class="math inline">\(_\text{J}\)</span> (BFGS with Jeffreys prior), and
+B<span class="math inline">\(_\text{r}\)</span> (BFGS with ridge
+penalization).</p>
+<div class="sourceCode" id="cb17"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb17-1"><a href="#cb17-1" tabindex="-1"></a><span class="co"># ----------------------------------------------------------------------------</span></span>
+<span id="cb17-2"><a href="#cb17-2" tabindex="-1"></a>estimates_final_part1 <span class="ot">&lt;-</span> estimates_final[<span class="dv">1</span><span class="sc">:</span><span class="dv">3</span>, <span class="fu">c</span>(<span class="dv">5</span><span class="sc">:</span><span class="dv">11</span>)]</span>
+<span id="cb17-3"><a href="#cb17-3" tabindex="-1"></a>estimates_final_part2 <span class="ot">&lt;-</span> estimates_final[<span class="dv">4</span><span class="sc">:</span><span class="dv">7</span>, <span class="fu">c</span>(<span class="dv">5</span><span class="sc">:</span><span class="dv">11</span>)]</span>
+<span id="cb17-4"><a href="#cb17-4" tabindex="-1"></a></span>
+<span id="cb17-5"><a href="#cb17-5" tabindex="-1"></a><span class="co"># Col names of the LaTeX table</span></span>
+<span id="cb17-6"><a href="#cb17-6" tabindex="-1"></a>ar_names <span class="ot">&lt;-</span> <span class="fu">paste0</span>(<span class="st">&quot;$</span><span class="sc">\\</span><span class="st">varphi_&quot;</span>, ar_vec, <span class="st">&quot;$&quot;</span>)</span>
+<span id="cb17-7"><a href="#cb17-7" tabindex="-1"></a>ma_names <span class="ot">&lt;-</span> <span class="fu">paste0</span>(<span class="st">&quot;$</span><span class="sc">\\</span><span class="st">theta_&quot;</span>, ma_vec, <span class="st">&quot;$&quot;</span>)</span>
+<span id="cb17-8"><a href="#cb17-8" tabindex="-1"></a>barma_names <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="st">&quot;$</span><span class="sc">\\</span><span class="st">alpha$&quot;</span>, ar_names, ma_names, <span class="st">&quot;$</span><span class="sc">\\</span><span class="st">phi$&quot;</span>)</span>
+<span id="cb17-9"><a href="#cb17-9" tabindex="-1"></a></span>
+<span id="cb17-10"><a href="#cb17-10" tabindex="-1"></a><span class="fu">colnames</span>(estimates_final_part1) <span class="ot">&lt;-</span> barma_names</span>
+<span id="cb17-11"><a href="#cb17-11" tabindex="-1"></a><span class="fu">colnames</span>(estimates_final_part2) <span class="ot">&lt;-</span> barma_names</span>
+<span id="cb17-12"><a href="#cb17-12" tabindex="-1"></a></span>
+<span id="cb17-13"><a href="#cb17-13" tabindex="-1"></a>rownames_part1 <span class="ot">&lt;-</span> <span class="fu">c</span>(</span>
+<span id="cb17-14"><a href="#cb17-14" tabindex="-1"></a>  <span class="st">&quot;$</span><span class="sc">\\</span><span class="st">text{B}$&quot;</span>,</span>
+<span id="cb17-15"><a href="#cb17-15" tabindex="-1"></a>  <span class="st">&quot;$</span><span class="sc">\\</span><span class="st">text{LB}$&quot;</span>,</span>
+<span id="cb17-16"><a href="#cb17-16" tabindex="-1"></a>  <span class="st">&quot;$</span><span class="sc">\\</span><span class="st">text{L}$&quot;</span></span>
+<span id="cb17-17"><a href="#cb17-17" tabindex="-1"></a>)</span>
+<span id="cb17-18"><a href="#cb17-18" tabindex="-1"></a></span>
+<span id="cb17-19"><a href="#cb17-19" tabindex="-1"></a>rownames_part2 <span class="ot">&lt;-</span> <span class="fu">c</span>(</span>
+<span id="cb17-20"><a href="#cb17-20" tabindex="-1"></a>  <span class="st">&quot;$</span><span class="sc">\\</span><span class="st">text{B}_{</span><span class="sc">\\</span><span class="st">text{J}}$&quot;</span>,</span>
+<span id="cb17-21"><a href="#cb17-21" tabindex="-1"></a>  <span class="st">&quot;$</span><span class="sc">\\</span><span class="st">text{B}_{</span><span class="sc">\\</span><span class="st">text{r}}$&quot;</span>,</span>
+<span id="cb17-22"><a href="#cb17-22" tabindex="-1"></a>  <span class="st">&quot;$</span><span class="sc">\\</span><span class="st">text{LB}_{</span><span class="sc">\\</span><span class="st">text{r}}$&quot;</span>,</span>
+<span id="cb17-23"><a href="#cb17-23" tabindex="-1"></a>  <span class="st">&quot;$</span><span class="sc">\\</span><span class="st">text{L}_{</span><span class="sc">\\</span><span class="st">text{r}}$&quot;</span></span>
+<span id="cb17-24"><a href="#cb17-24" tabindex="-1"></a>)</span>
+<span id="cb17-25"><a href="#cb17-25" tabindex="-1"></a></span>
+<span id="cb17-26"><a href="#cb17-26" tabindex="-1"></a>estimates_final_part1 <span class="ot">&lt;-</span> <span class="fu">cbind</span>(<span class="st">&quot;Algorithm&quot;</span> <span class="ot">=</span> rownames_part1,</span>
+<span id="cb17-27"><a href="#cb17-27" tabindex="-1"></a>                               estimates_final_part1)</span>
+<span id="cb17-28"><a href="#cb17-28" tabindex="-1"></a></span>
+<span id="cb17-29"><a href="#cb17-29" tabindex="-1"></a>estimates_final_part2 <span class="ot">&lt;-</span> <span class="fu">cbind</span>(<span class="st">&quot;Algorithm&quot;</span> <span class="ot">=</span> rownames_part2, </span>
+<span id="cb17-30"><a href="#cb17-30" tabindex="-1"></a>                               estimates_final_part2)</span>
+<span id="cb17-31"><a href="#cb17-31" tabindex="-1"></a></span>
+<span id="cb17-32"><a href="#cb17-32" tabindex="-1"></a><span class="fu">rownames</span>(estimates_final_part1) <span class="ot">&lt;-</span> <span class="cn">NULL</span></span>
+<span id="cb17-33"><a href="#cb17-33" tabindex="-1"></a><span class="fu">rownames</span>(estimates_final_part2) <span class="ot">&lt;-</span> <span class="cn">NULL</span></span></code></pre></div>
+<table>
+<caption>Parameter estimates for the <span class="math inline">\(\beta\)</span>ARMA(1,4) model obtained using
+different algorithms; data were generated from a <span class="math inline">\(\beta\)</span>AR(1) process.</caption>
+<colgroup>
+<col width="14%" />
+<col width="10%" />
+<col width="14%" />
+<col width="12%" />
+<col width="12%" />
+<col width="12%" />
+<col width="12%" />
+<col width="9%" />
+</colgroup>
+<thead>
+<tr class="header">
+<th align="left">Algorithm</th>
+<th align="right"><span class="math inline">\(\alpha\)</span></th>
+<th align="right"><span class="math inline">\(\varphi_1\)</span></th>
+<th align="right"><span class="math inline">\(\theta_1\)</span></th>
+<th align="right"><span class="math inline">\(\theta_2\)</span></th>
+<th align="right"><span class="math inline">\(\theta_3\)</span></th>
+<th align="right"><span class="math inline">\(\theta_4\)</span></th>
+<th align="right"><span class="math inline">\(\phi\)</span></th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td align="left"><span class="math inline">\(\text{B}\)</span></td>
+<td align="right">-0.0007</td>
+<td align="right">0.9714</td>
+<td align="right">-0.6565</td>
+<td align="right">-0.1790</td>
+<td align="right">-0.1123</td>
+<td align="right">-0.1432</td>
+<td align="right">22.2042</td>
+</tr>
+<tr class="even">
+<td align="left"><span class="math inline">\(\text{LB}\)</span></td>
+<td align="right">-0.0011</td>
+<td align="right">0.9739</td>
+<td align="right">-0.6384</td>
+<td align="right">-0.1826</td>
+<td align="right">-0.1847</td>
+<td align="right">-0.1058</td>
+<td align="right">20.3541</td>
+</tr>
+<tr class="odd">
+<td align="left"><span class="math inline">\(\text{L}\)</span></td>
+<td align="right">-0.0012</td>
+<td align="right">0.9349</td>
+<td align="right">-0.5379</td>
+<td align="right">-0.1784</td>
+<td align="right">-0.0474</td>
+<td align="right">-0.1701</td>
+<td align="right">20.2956</td>
+</tr>
+</tbody>
+</table>
+<table style="width:100%;">
+<caption>Parameter estimates for the <span class="math inline">\(\beta\)</span>ARMA(1,4) model obtained using
+penalized log-likelihood and different optimization algorithms; data
+generated from a <span class="math inline">\(\beta\)</span>AR(1)
+model.</caption>
+<colgroup>
+<col width="23%" />
+<col width="9%" />
+<col width="12%" />
+<col width="11%" />
+<col width="11%" />
+<col width="11%" />
+<col width="11%" />
+<col width="8%" />
+</colgroup>
+<thead>
+<tr class="header">
+<th align="left">Algorithm</th>
+<th align="right"><span class="math inline">\(\alpha\)</span></th>
+<th align="right"><span class="math inline">\(\varphi_1\)</span></th>
+<th align="right"><span class="math inline">\(\theta_1\)</span></th>
+<th align="right"><span class="math inline">\(\theta_2\)</span></th>
+<th align="right"><span class="math inline">\(\theta_3\)</span></th>
+<th align="right"><span class="math inline">\(\theta_4\)</span></th>
+<th align="right"><span class="math inline">\(\phi\)</span></th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td align="left"><span class="math inline">\(\text{B}_{\text{J}}\)</span></td>
+<td align="right">9e-04</td>
+<td align="right">0.9641</td>
+<td align="right">-0.6349</td>
+<td align="right">-0.1477</td>
+<td align="right">-0.1627</td>
+<td align="right">-0.0833</td>
+<td align="right">22.5348</td>
+</tr>
+<tr class="even">
+<td align="left"><span class="math inline">\(\text{B}_{\text{r}}\)</span></td>
+<td align="right">-5e-03</td>
+<td align="right">0.3924</td>
+<td align="right">0.0114</td>
+<td align="right">0.0832</td>
+<td align="right">0.0191</td>
+<td align="right">-0.0569</td>
+<td align="right">21.2682</td>
+</tr>
+<tr class="odd">
+<td align="left"><span class="math inline">\(\text{LB}_{\text{r}}\)</span></td>
+<td align="right">-5e-03</td>
+<td align="right">0.3924</td>
+<td align="right">0.0114</td>
+<td align="right">0.0832</td>
+<td align="right">0.0191</td>
+<td align="right">-0.0569</td>
+<td align="right">21.2676</td>
+</tr>
+<tr class="even">
+<td align="left"><span class="math inline">\(\text{L}_{\text{r}}\)</span></td>
+<td align="right">-5e-03</td>
+<td align="right">0.3924</td>
+<td align="right">0.0114</td>
+<td align="right">0.0832</td>
+<td align="right">0.0191</td>
+<td align="right">-0.0569</td>
+<td align="right">21.2682</td>
+</tr>
+</tbody>
+</table>
+</div>
+<div id="reproducibility" class="section level2">
+<h2>Reproducibility</h2>
+<p>To ensure the long-term reproducibility of this analysis, the
+following section details the specific computational environment in
+which this document was generated. This includes the R version,
+operating system, and all loaded package versions. This information is
+crucial for anyone attempting to replicate these findings in the
+future.</p>
+<pre><code>#&gt; =================================================================
+#&gt; Session Information
+#&gt; =================================================================
+#&gt; This report was generated at: outubro 07, 2025 at 04:54
+#&gt; R version 4.4.2 (2024-10-31)
+#&gt; Platform: x86_64-pc-linux-gnu
+#&gt; Running under: Ubuntu 24.04.3 LTS
+#&gt; 
+#&gt; Matrix products: default
+#&gt; BLAS:   /usr/lib/x86_64-linux-gnu/openblas-pthread/libblas.so.3 
+#&gt; LAPACK: /usr/lib/x86_64-linux-gnu/openblas-pthread/libopenblasp-r0.3.26.so;  LAPACK version 3.12.0
+#&gt; 
+#&gt; locale:
+#&gt;  [1] LC_CTYPE=pt_BR.UTF-8       LC_NUMERIC=C               LC_TIME=pt_BR.UTF-8       
+#&gt;  [4] LC_COLLATE=pt_BR.UTF-8     LC_MONETARY=pt_BR.UTF-8    LC_MESSAGES=pt_BR.UTF-8   
+#&gt;  [7] LC_PAPER=pt_BR.UTF-8       LC_NAME=C                  LC_ADDRESS=C              
+#&gt; [10] LC_TELEPHONE=C             LC_MEASUREMENT=pt_BR.UTF-8 LC_IDENTIFICATION=C       
+#&gt; 
+#&gt; time zone: America/Bahia
+#&gt; tzcode source: system (glibc)
+#&gt; 
+#&gt; attached base packages:
+#&gt; [1] parallel  stats     graphics  grDevices utils     datasets  methods   base     
+#&gt; 
+#&gt; other attached packages:
+#&gt;  [1] doRNG_1.8.6.2            rngtools_1.5.2           doMC_1.3.8              
+#&gt;  [4] iterators_1.0.14         foreach_1.5.2            gridExtra_2.3           
+#&gt;  [7] zoo_1.8-14               dplyr_1.1.4              ggplot2_4.0.0           
+#&gt; [10] forecast_8.24.0          BarmaRidgeBJPS2025_1.0.0
+#&gt; 
+#&gt; loaded via a namespace (and not attached):
+#&gt;  [1] sass_0.4.10        generics_0.1.4     lattice_0.22-5     digest_0.6.37     
+#&gt;  [5] magrittr_2.0.4     evaluate_1.0.5     grid_4.4.2         RColorBrewer_1.1-3
+#&gt;  [9] fastmap_1.2.0      jsonlite_2.0.0     nnet_7.3-19        tinytex_0.57      
+#&gt; [13] scales_1.4.0       jquerylib_0.1.4    codetools_0.2-20   Rdpack_2.6.4      
+#&gt; [17] cli_3.6.5          rlang_1.1.6        rbibutils_2.3      lbfgs_1.2.1.2     
+#&gt; [21] cachem_1.1.0       yaml_2.3.10        withr_3.0.2        tools_4.4.2       
+#&gt; [25] colorspace_2.1-2   curl_7.0.0         vctrs_0.6.5        R6_2.6.1          
+#&gt; [29] lifecycle_1.0.4    tseries_0.10-58    pkgconfig_2.0.3    urca_1.3-4        
+#&gt; [33] bslib_0.9.0        pillar_1.11.1      gtable_0.3.6       moments_0.14.1    
+#&gt; [37] glue_1.8.0         quantmod_0.4.28    Rcpp_1.1.0         xfun_0.53         
+#&gt; [41] tibble_3.3.0       lmtest_0.9-40      tidyselect_1.2.1   rstudioapi_0.17.1 
+#&gt; [45] knitr_1.50         farver_2.1.2       htmltools_0.5.8.1  nlme_3.1-165      
+#&gt; [49] rmarkdown_2.30     labeling_0.4.3     xts_0.14.1         timeDate_4041.110 
+#&gt; [53] fracdiff_1.5-3     compiler_4.4.2     S7_0.2.0           quadprog_1.5-8    
+#&gt; [57] TTR_0.24.4</code></pre>
+</div>
+</div>
+
+
+
+<!-- code folding -->
+
+
+<!-- dynamically load mathjax for compatibility with self-contained -->
+<script>
+  (function () {
+    var script = document.createElement("script");
+    script.type = "text/javascript";
+    script.src  = "https://mathjax.rstudio.com/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML";
+    document.getElementsByTagName("head")[0].appendChild(script);
+  })();
+</script>
+
+</body>
+</html>
