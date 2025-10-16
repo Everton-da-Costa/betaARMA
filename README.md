@@ -47,7 +47,8 @@ This project aims to create the `betaARMA` package as a go-to resource for resea
 This is the development plan for the `betaARMA` package.
 
 ### Phase 1: Research, Architecture, and Setup (Deadline: October 31, 2025)
-- [ ] **Research:** Analyze reference packages (e.g., `btsr`, `stats::arima`) to find the most efficient and stable way to implement the **recursion of the dynamic component**.
+- [ ] **Research:** Analyze reference packages (e.g., `btsr`) to find efficient and stable way of implementation (e.g. recursion of the dynamic component).
+  - **Key Finding:** The `btsr` package uses highly optimized `Fortran` code. A detailed study of this implementation is a valuable long-term goal for future performance enhancements but is out of scope for the initial package version.
 - [ ] **Architecture:** Define the use of the S3 object system for model objects (class `"betaARMA"`).
 - [ ] **Optimization:** Select and test the optimization algorithm (e.g., `stats::optim` with the `L-BFGS-B`, `lbfgs` method).
 - [ ] **Setup:** Create the package skeleton and initialize version control with Git.
