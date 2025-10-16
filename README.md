@@ -1,5 +1,6 @@
 # betaARMA
 
+
 [![Status](https://img.shields.io/badge/Status-In_Development-blue.svg)](https://github.com/Everton-da-Costa/betaARMA)
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
