@@ -1,9 +1,3 @@
----
-title: "betaARMA: A Package for Beta Autoregressive Moving Average Models"
-author: "Everton da Costa"
-output: github_document
----
-
 # betaARMA
 
 [![Status](https://img.shields.io/badge/Status-In_Development-blue.svg)](https://github.com/Everton-da-Costa/betaARMA)
