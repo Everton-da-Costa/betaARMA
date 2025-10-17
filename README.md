@@ -1,9 +1,20 @@
 # betaARMA
 
-
 [![Status](https://img.shields.io/badge/Status-In_Development-blue.svg)](https://github.com/Everton-da-Costa/betaARMA)
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+
+[![R-CMD-check](https://github.com/Everton-da-Costa/betaARMA/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/Everton-da-Costa/betaARMA/actions/workflows/R-CMD-check.yaml)
+
+---
+
+## Build Status
+
+This package uses GitHub Actions for continuous integration. The workflow automatically runs `R CMD check` on the latest Ubuntu distribution with the development version of R (`R-devel`). This process ensures that the package remains compliant with current and future CRAN standards. Any `NOTE`s or `WARNING`s that arise from these checks are tracked as issues and will be resolved before the first official release.
+
+---
+
+An R package for fitting, forecasting, and simulating Beta Autoregressive Moving Average $(\beta\text{ARMA})$ models...
 
 An R package for fitting, forecasting, and simulating Beta Autoregressive Moving Average $(\beta\text{ARMA})$ models. This package provides a comprehensive and user-friendly toolkit for modeling time series data bounded on the (0, 1) interval, such as rates, proportions, and indices.
 
@@ -49,6 +60,7 @@ This is the development plan for the `betaARMA` package.
 ### Phase 1: Research, Architecture, and Setup (Deadline: October 31, 2025)
 - [ ] **Research:** Analyze reference packages (e.g., `btsr`) to find efficient and stable way of implementation (e.g. recursion of the dynamic component).
   - **Key Finding:** The `btsr` package uses highly optimized `Fortran` for its core computational logic (e.g., in the `src/04_base.f90` file). A detailed study of this implementation is a valuable long-term goal for future performance enhancements but is out of scope for the initial package version.
+- [X] **Continuous Integration:** Set up GitHub Actions to run `R-CMD-check` for CRAN compliance.
 - [ ] **Architecture:** Define the use of the S3 object system for model objects (class `"betaARMA"`).
 - [ ] **Optimization:** Select and test the optimization algorithm (e.g., `stats::optim` with the `L-BFGS-B`, `lbfgs` method).
 - [ ] **Setup:** Create the package skeleton and initialize version control with Git.
