@@ -58,7 +58,7 @@ This project aims to create the `betaARMA` package as a go-to resource for resea
 This is the development plan for the `betaARMA` package.
 
 ### Phase 1: Research, Architecture, and Setup (Deadline: October 31, 2025)
-- [ ] **Research:** Analyze reference packages (e.g., `btsr`) to find efficient and stable way of implementation.
+- [ ] **Research:** Analyze reference packages (e.g., `btsr`, `arima2::arima`, `forecast::Arima`, `stats::arima`) to find efficient and stable way of implementation.
   - **Key Finding:** The `btsr` package uses highly optimized `Fortran` for its core computational logic (e.g., in the `src/04_base.f90` file). A detailed study of this implementation is a valuable long-term goal for future performance enhancements but is out of scope for the initial package version.
 - [X] **Continuous Integration:** Set up GitHub Actions to run `R-CMD-check` for CRAN compliance.
 - [ ] **Architecture:** Define the use of the S3 object system for model objects (class `"betaARMA"`).
