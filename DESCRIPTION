@@ -37,7 +37,6 @@ Imports:
     ggplot2,
     foreach,
     zoo,
-    doRNG,
     stats,
     dplyr,
     gridExtra
