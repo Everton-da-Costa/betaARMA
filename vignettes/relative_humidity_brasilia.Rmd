@@ -42,7 +42,7 @@ Numerical stability enhancements in beta autoregressive moving average model est
 
 ## Data and Exploratory Analysis
 
-We'll start by loading the necessary R packages. These include tools for time series analysis (`forecast`), data handling (`dplyr`, `zoo`), plotting (`ggplot2`), and the bootstrap procedures (`doMC`, `doRNG`).
+We'll start by loading the necessary R packages. These include tools for time series analysis (`forecast`), data handling (`dplyr`, `zoo`), and plotting (`ggplot2`).
 
 ```{r, library}
 library(BarmaRidgeBJPS2025)
@@ -52,9 +52,6 @@ library(zoo)        # yearmon handling
 library(dplyr)      # data manipulation
 library(gridExtra)  # grid.arrange for plots
 
-# Bootstrap libraries
-library(doMC)
-library(doRNG)
 ```
 
 Next, we'll set up some standard configurations for our `ggplot2` plots. This helps ensure a consistent and clean appearance for all visualizations in the vignette.
