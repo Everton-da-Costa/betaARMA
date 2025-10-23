@@ -36,7 +36,6 @@ Imports:
     Rdpack,
     ggplot2,
     foreach,
-    doMC,
     zoo,
     doRNG,
     stats,
