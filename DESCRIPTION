@@ -1,54 +1,41 @@
-Package: BarmaRidgeBJPS2025
-Title: Enhancements for Numerical Stability in Beta ARMA Models
-Version: 1.0.0
+Package: betaARMA
+Title: Beta Autoregressive Moving Average Models
+Version: 0.0.1
 Authors@R: c(
   person("Everton", "da Costa",
     email = "everton.ecosta@ufpe.br",
     role = c("aut", "cre"),
     comment = c(ORCID = "0000-0001-7580-2639")
   ),
-  person("Rodney V.", "Fonseca",
-    email = "rodneyfonseca@ufba.br",
-    role = "ctb",
-    comment = c(ORCID = "0000-0003-3948-3145")
-  ),
   person("Francisco", "Cribari-Neto",
     email = "francisco.cribari@ufpe.br",
     role = "ctb",
     comment = c(ORCID = "0000-0002-5909-6698")
   ))
-Description: Implements a ridge penalization scheme to improve the numerical 
-    stability of conditional maximum likelihood estimation for Beta 
-    Autoregressive Moving Average (BARMA) models. The penalty term enhances 
-    the curvature of the log-likelihood function, reducing the risk of 
-    convergence failures and implausible estimates. The package also provides 
-    a bootstrap-based parameter estimation strategy as a complementary solution. 
-    These tools are designed to replicate the analysis and methods presented in 
-    Cribari-Neto, Costa, and Fonseca (2025).
+Description: ... 
 License: MIT + file LICENSE
-URL: https://github.com/everton-da-costa/BarmaRidgeBJPS2025
-BugReports: https://github.com/everton-da-costa/BarmaRidgeBJPS2025/issues
+URL: https://github.com/everton-da-costa/betaARMA
+BugReports: https://github.com/everton-da-costa/betaARMA/issues
 Encoding: UTF-8
 LazyData: true
 RoxygenNote: 7.3.2
 RdMacros: Rdpack
 Imports: 
-    Rdpack,
-    ggplot2,
-    foreach,
-    zoo,
-    stats,
-    dplyr,
-    gridExtra
-Suggests:
-    xtable,
     forecast,
-    here,
+    Rdpack
+Suggests:
     knitr,
+    xtable,
+    here,
     moments,
     rmarkdown,
     tseries,
-    lbfgs
+    lbfgs,
+    ggplot2,
+    foreach,
+    zoo,
+    dplyr,
+    gridExtra
 VignetteBuilder: knitr
 Depends: 
     R (>= 3.5)

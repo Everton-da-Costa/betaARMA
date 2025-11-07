@@ -69,46 +69,46 @@
 #' @export
 make_link_structure <- function(link = link){
 
-  linktemp <- substitute(link)
-  if (!is.character(linktemp)) {
-    linktemp <- deparse(linktemp)
-    if (linktemp == "link") {
-      linktemp <- eval(link)
-    }
+  # ------------------------------------------------------------------------- #
+  # --- 1. Validate Link Argument ---
+  # ------------------------------------------------------------------------- #
+  
+  # This function now uses standard evaluation.
+  # 'link' is expected to be a simple character string, e.g., "logit".
+  
+  if (!is.character(link) || length(link) != 1) {
+    stop("Argument 'link' must be a single character string.")
   }
-
-  if (any(linktemp == c("logit", "probit", "cloglog"))) {
-
-    stats <- make.link(linktemp)
-
-  } else if (linktemp == "loglog") {
-
+  
+  # ------------------------------------------------------------------------- #
+  # --- 2. Select Link Structure ---
+  # ------------------------------------------------------------------------- #
+  
+  if (link == "logit") {
+    stats <- make.link("logit")
+  } else if (link == "probit") {
+    stats <- make.link("probit")
+  } else if (link == "cloglog") {
+    stats <- make.link("cloglog")
+  } else if (link == "loglog") {
     stats <- list()
-
     stats$linkfun <- function(mu) -log(-log(mu))
     stats$linkinv <- function(eta) exp(-exp(-eta))
-    stats$mu.eta <- function(eta) exp(-exp(-eta)) * exp(-eta)
-
+    stats$mu.eta <- function(eta) exp(-exp(-eta) - eta)
   } else {
     stop(paste(
-      linktemp, "link not available, available links are
+      link, "link not available, available links are
       \"logit\", ", "\"probit\", ", "\"cloglog\" and \"loglog\""
     ))
   }
-
-  link1 <- structure(list(
-    link = linktemp,
-    linkfun = stats$linkfun,
-    linkinv = stats$linkinv,
-    mu.eta = stats$mu.eta
-  ))
-
-  linkfun <- link1$linkfun
-  linkinv <- link1$linkinv
-  mu.eta <- link1$mu.eta
-
-  return(list(linkfun = linkfun,
-              linkinv = linkinv,
-              mu.eta = mu.eta))
+  
+  # ------------------------------------------------------------------------- #
+  # --- 3. Return Structure ---
+  # ------------------------------------------------------------------------- #
+  
+  # Return the components directly
+  return(list(linkfun = stats$linkfun,
+              linkinv = stats$linkinv,
+              mu.eta = stats$mu.eta))
 
 }

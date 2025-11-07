@@ -67,6 +67,6 @@ modelling rates and proportions. *Journal of Applied Statistics*,
 \author{
 Original code by Fabio M. Bayer (bayer@ufsm.br).
 Substantially modified and improved by Everton da Costa
-(everto_cost@gmail.com).
+(everto.cost@gmail.com).
 }
 \keyword{external}

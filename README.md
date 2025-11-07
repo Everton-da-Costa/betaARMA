@@ -1,20 +1,9 @@
 # betaARMA
 
 [![Status](https://img.shields.io/badge/Status-In_Development-blue.svg)](https://github.com/Everton-da-Costa/betaARMA)
-
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-[![R-CMD-check](https://github.com/Everton-da-Costa/betaARMA/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/Everton-da-Costa/betaARMA/actions/workflows/R-CMD-check.yaml)
-
 ---
-
-## Build Status
-
-This package uses GitHub Actions for continuous integration. The workflow automatically runs `R CMD check` on the latest Ubuntu distribution with the development version of R (`R-devel`). This process ensures that the package remains compliant with current and future CRAN standards. Any `NOTE`s or `WARNING`s that arise from these checks are tracked as issues and will be resolved before the first official release.
-
----
-
-An R package for fitting, forecasting, and simulating Beta Autoregressive Moving Average $(\beta\text{ARMA})$ models...
 
 An R package for fitting, forecasting, and simulating Beta Autoregressive Moving Average $(\beta\text{ARMA})$ models. This package provides a comprehensive and user-friendly toolkit for modeling time series data bounded on the (0, 1) interval, such as rates, proportions, and indices.
 
@@ -23,7 +12,7 @@ An R package for fitting, forecasting, and simulating Beta Autoregressive Moving
 ## 📚 Table of Contents
 
 - [🎯 Project Motivation](#-project-motivation)
-- [✨ Planned Features](#-planned-features)
+- [✨ Core Features](#-core-features)
 - [🗺️ Development Roadmap](#️-development-roadmap)
 - [🛠️ Installation](#️-installation)
 - [🚀 Getting Started](#-getting-started)
@@ -39,17 +28,21 @@ An R package for fitting, forecasting, and simulating Beta Autoregressive Moving
 
 The Beta Autoregressive Moving Average $(\beta\text{ARMA})$ model is a powerful tool for analyzing time series data bounded between 0 and 1. While foundational models exist, there is a need for a unified R package that simplifies the entire modeling workflow—from fitting flexible AR, MA, and ARMA structures to performing diagnostics, forecasting, and simulation.
 
-This project aims to create the `betaARMA` package as a go-to resource for researchers and practitioners working with bounded time series data. The focus is on a clean interface, and strong documentation.
+This project aims to create the `betaARMA` package as a go-to resource for researchers and practitioners working with bounded time series data. The focus is on a clean interface, robust implementation, and strong documentation.
 
 ---
 
-## ✨ Planned Features
+## ✨ Core Features
 
-* **Unified Model Fitting:** A single core function, `betaARMA()`, for fitting AR, MA, and ARMA models with support for regressors (`xreg`).
-* **Object-Oriented Design:** A clean S3 class system, allowing for intuitive use of standard R generics like `predict()`, `summary()`, `plot()`, and `simulate()`.
-* **Forecasting Engine:** A powerful `predict()` method to generate multi-step-ahead forecasts.
-* **Simulation Tools:** A `simulate()` method to generate sample paths from a fitted model for analysis and testing.
-* **Model Diagnostics:** Built-in functions for residual analysis and model validation, including Portmanteau tests.
+* **Unified Model Fitting:** A single core function, `barma()`, now handles $\beta$AR, $\beta$MA, and $\beta$ARMA models through a single, clean interface.
+* **Object-Oriented Design:** The package uses a modern S3 class system. The `barma()` output object works directly with standard R generics:
+    * `print()` for a concise model overview.
+    * `summary()` for a detailed table of coefficients, std. errors, p-values, and information criteria.
+    * `coef()` to extract the coefficient vector.
+    * `fitted()` to extract the NA-padded fitted values as a `ts` object.
+    * `residuals()` to calculate and extract standardized residuals.
+* **Forecasting Engine:** A `forecast()` method is implemented to generate dynamic, multi-step-ahead point forecasts from a fitted model.
+* **Simulation Tools:** Includes a `simu_barma()` function to generate time series from known $\beta$ARMA processes for testing and validation.
 
 ---
 
@@ -59,29 +52,29 @@ This is the development plan for the `betaARMA` package.
 
 ### Phase 1: Research, Architecture, and Setup (Deadline: October 31, 2025)
 - [ ] **Research:** Analyze reference packages (e.g., `btsr`, `arima2::arima`, `forecast::Arima`, `stats::arima`) to find efficient and stable way of implementation.
-  - **Key Finding:** The `btsr` package uses highly optimized `Fortran` for its core computational logic (e.g., in the `src/04_base.f90` file). A detailed study of this implementation is a valuable long-term goal for future performance enhancements but is out of scope for the initial package version.
-- [X] **Continuous Integration:** Set up GitHub Actions to run `R-CMD-check` for CRAN compliance.
-- [ ] **Architecture:** Define the use of the S3 object system for model objects (class `"betaARMA"`).
-- [ ] **Optimization:** Select and test the optimization algorithm (e.g., `stats::optim` with the `L-BFGS-B`, `lbfgs` method).
-- [ ] **Setup:** Create the package skeleton and initialize version control with Git.
+- [ ] **Continuous Integration:** Set up GitHub Actions to run `R-CMD-check`. (User will implement this later).
+- [X] **Architecture:** Define the use of the S3 object system for model objects (class `"barma"`).
+- [X] **Optimization:** Select and test the optimization algorithm (`stats::optim` with the `BFGS` method).
+- [X] **Setup:** Create the package skeleton and initialize version control with Git.
 
 ### Phase 2: Core Model Implementation (Deadline: November 14, 2025)
-- [ ] **Main Function:** Develop `betaARMA()` to unify AR, MA, and ARMA model fitting (without regressors initially).
+- [X] **Main Function:** Develop `barma()` to unify AR, MA, and ARMA model fitting (without regressors).
 - [ ] **Regressors:** Implement support for static regressors (`xreg`).
-- [ ] **S3 Object:** Structure the `betaARMA` class with a standardized list of outputs (coefficients, residuals, vcov, etc.).
-- [ ] **Basic Methods:** Create the essential S3 methods: `print.betaARMA()`, `summary.betaARMA()`, `coef.betaARMA()`, and `fitted.betaARMA()`.
+- [X] **S3 Object:** Structure the `barma` class with a standardized list of outputs.
+- [X] **Basic Methods:** Create the essential S3 methods: `print()`, `summary()`, `coef()`, and `fitted()`.
 
 ### Phase 3: Essential Functionality (Deadline: November 28, 2025)
-- [ ] **Add Regressor Support:** Enhance the `betaARMA()` function to support static regressors via an `xreg` argument.
-- [ ] **Forecasting:** Implement the `predict.betaARMA()` method with support for `n.ahead` and `newxreg`.
-- [ ] **Simulation:** Create the `simulate.betaARMA()` method to generate sample paths from a fitted model.
-- [ ] **Diagnostics:** Develop a `check_residuals()` function with options for Portmanteau tests (Ljung-Box, Monti, `Q_4`).
+- [ ] **Add Regressor Support:** Enhance the `barma()` function to support static regressors via an `xreg` argument.
+- [X] **Forecasting:** Implement the `forecast.barma()` method.
+- [X] **Simulation:** Create the `simu_barma()` function.
+- [X] **Residuals:** Implement the `residuals.barma()` method.
+- [ ] **Diagnostics:** Develop a `plot.barma()` method for residual analysis.
 
 ### Phase 4: Documentation & Polishing (Deadline: December 12, 2025)
 - [ ] **Datasets:** Add and document the seasonal and non-seasonal datasets.
-- [ ] **Help Pages:** Document all exported functions and datasets using `roxygen2`.
-- [ ] **Vignette:** Write a tutorial (package vignette) demonstrating a complete workflow.
-- [ ] **Review:** Conduct a final review of all code and documentation before tagging a "version 1.0".
+- [ ] **Help Pages:** Finalize documentation for all exported functions.
+- [ ] **Vignette:** Write a complete tutorial (package vignette) demonstrating a full workflow.
+- [ ] **Review:** Conduct a final review of all code and documentation.
 
 ---
 
@@ -98,8 +91,7 @@ if (!require("remotes")) {
 Then, install the package from GitHub (note: this link will be active once the repository is public):
 ```R
 remotes::install_github("everton-da-costa/betaARMA", 
-                        dependencies = TRUE,
-                        build_vignettes = TRUE)
+                        dependencies = TRUE)
 ```
 
 ---
@@ -109,8 +101,21 @@ remotes::install_github("everton-da-costa/betaARMA",
 Once installed, the best way to get started will be through the package vignette, which will provide a detailed, narrated code example.
 
 ```R
-# This command will work once the first vignette is complete
-vignette("intro_betaARMA", package = "betaARMA")
+library(betaARMA)
+
+# 1. Simulate some data
+set.seed(123)
+y <- simu_barma(n = 100, ar = 1, varphi = 0.5, phi = 20)
+
+# 2. Fit a model
+fit <- barma(y, ar = 1)
+
+# 3. Get a detailed summary
+summary(fit)
+
+# 4. Get 10-step-ahead forecasts
+forecast_h10 <- forecast(fit, h = 10)
+print(forecast_h10)
 ```
 
 ---
@@ -122,12 +127,10 @@ The repository is structured as a standard R package for clarity and reproducibi
 ```plaintext
 .
 ├── R/                  # Source code for all R functions.
-├── data/               # Processed data included in the package (.rda).
-├── data-raw/           # Raw data and scripts used to process it.
-├── man/                # R package documentation files for functions.
-├── vignettes/          # Detailed tutorial and case study (.Rmd).
+├── man/                # R package documentation files (generated by roxygen2).
+├── validation/         # Scripts for testing and validation.
 ├── DESCRIPTION         # Package metadata and dependencies.
-├── NAMESPACE           # Manages the package's namespace.
+├── NAMESPACE           # Manages the package's namespace (generated by roxygen2).
 ├── LICENSE             # MIT License file.
 └── README.md           # This file.
 ```
