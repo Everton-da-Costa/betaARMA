@@ -50,31 +50,32 @@ This project aims to create the `betaARMA` package as a go-to resource for resea
 
 This is the development plan for the `betaARMA` package.
 
-### Phase 1: Research, Architecture, and Setup (Deadline: October 31, 2025)
-- [ ] **Research:** Analyze reference packages (e.g., `btsr`, `arima2::arima`, `forecast::Arima`, `stats::arima`) to find efficient and stable way of implementation.
-- [ ] **Continuous Integration:** Set up GitHub Actions to run `R-CMD-check`. (User will implement this later).
-- [X] **Architecture:** Define the use of the S3 object system for model objects (class `"barma"`).
-- [X] **Optimization:** Select and test the optimization algorithm (`stats::optim` with the `BFGS` method).
-- [X] **Setup:** Create the package skeleton and initialize version control with Git.
+### Phase 1: Architecture and Core Setup (Completed)
+- [x] **Research:** Analyzed reference packages (`btsr`, `arima2::arima`, `forecast::Arima`) for stability.
+- [x] **Architecture:** Defined the S3 object system for model objects (class `"barma"`).
+- [x] **Optimization:** Selected and tested `stats::optim` with the `BFGS` method.
+- [x] **Setup:** Created package skeleton and initialized version control.
 
-### Phase 2: Core Model Implementation (Deadline: November 14, 2025)
-- [X] **Main Function:** Develop `barma()` to unify AR, MA, and ARMA model fitting (without regressors).
-- [ ] **Regressors:** Implement support for static regressors (`xreg`).
-- [X] **S3 Object:** Structure the `barma` class with a standardized list of outputs.
-- [X] **Basic Methods:** Create the essential S3 methods: `print()`, `summary()`, `coef()`, and `fitted()`.
+### Phase 2: Core Model Implementation (Completed)
+- [x] **Main Function:** Developed `barma()` to unify AR, MA, and ARMA model fitting.
+- [x] **S3 Object:** Structured the `barma` class with a standardized list of outputs.
+- [x] **Basic Methods:** Created essential S3 methods: `print()`, `summary()`, `coef()`, and `fitted()`.
 
-### Phase 3: Essential Functionality (Deadline: November 28, 2025)
-- [ ] **Add Regressor Support:** Enhance the `barma()` function to support static regressors via an `xreg` argument.
-- [X] **Forecasting:** Implement the `forecast.barma()` method.
-- [X] **Simulation:** Create the `simu_barma()` function.
-- [X] **Residuals:** Implement the `residuals.barma()` method.
+### Phase 3: Regressors & Diagnostics (Current Sprint: Deadline Feb 12, 2026)
+- [ ] **Add Regressor Support:** Enhance `barma()` to support static regressors via an `xreg` argument.
 - [ ] **Diagnostics:** Develop a `plot.barma()` method for residual analysis.
+- [ ] **Optimization Engines:** Expand support to include bound-constrained methods (e.g., `optim(method = "L-BFGS-B")`) and alternative solvers like `lbfgs`.
+- [x] **Forecasting:** Implement the `forecast.barma()` method.
+- [x] **Simulation:** Create the `simu_barma()` function.
+- [x] **Residuals:** Implement the `residuals.barma()` method.
 
-### Phase 4: Documentation & Polishing (Deadline: December 12, 2025)
-- [ ] **Datasets:** Add and document the seasonal and non-seasonal datasets.
+### Phase 4: Documentation & Final Polish (Target: March 2026)
+- [ ] **CRAN Compliance:** Check CRAN documentation and repository policies.
+- [ ] **Datasets:** Add and document seasonal and non-seasonal datasets.
 - [ ] **Help Pages:** Finalize documentation for all exported functions.
 - [ ] **Vignette:** Write a complete tutorial (package vignette) demonstrating a full workflow.
-- [ ] **Review:** Conduct a final review of all code and documentation.
+- [ ] **Continuous Integration:** Set up GitHub Actions for `R-CMD-check`.
+- [ ] **Review:** Conduct final code and documentation review.
 
 ---
 
