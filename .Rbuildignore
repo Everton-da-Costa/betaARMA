@@ -4,3 +4,5 @@
 ^doc$
 ^Meta$
 ^data-raw$
+^betaARMA\.Rproj$
+^cran-comments\.md$
