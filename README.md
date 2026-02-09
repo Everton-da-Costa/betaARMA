@@ -1,6 +1,7 @@
 # betaARMA: Beta Autoregressive Moving Average Models
 
 [![Status](https://img.shields.io/badge/Status-Active_Development-blue.svg)](https://github.com/Everton-da-Costa/betaARMA)
+[![R-hub](https://github.com/Everton-da-Costa/betaARMA/actions/workflows/rhub.yaml/badge.svg)](https://github.com/Everton-da-Costa/betaARMA/actions/workflows/rhub.yaml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
 This repository contains the R package **`betaARMA`**, a comprehensive toolkit for fitting, forecasting, and simulating Beta Autoregressive Moving Average models. It provides a unified workflow for modeling time series data bounded on the (0, 1) interval, such as rates, proportions, and indices.
