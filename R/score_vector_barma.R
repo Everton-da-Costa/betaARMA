@@ -16,34 +16,52 @@
 #'   Use numeric(0) or empty vector if no MA component.
 #' @param phi The precision parameter of the BARMA model (must be positive).
 #' @param link A character string for the link function (e.g., "logit").
+#' @param xreg A matrix or data frame of static regressors (optional).
+#' @param beta A numeric vector of regression coefficients (optional).
 #'
 #' @return A numeric vector representing the score for each parameter.
 #'
 #' @keywords internal
-#'
-score_vector_barma <- function(y, ar, ma, alpha, varphi, theta, phi, link) {
-  
-  # ------------------------------------------------------------------------- #
-  # --- 1. Validate Precision Parameter ---
-  # ------------------------------------------------------------------------- #
+score_vector_barma <- function(y, ar, ma, alpha, varphi, theta, phi, link,
+                               xreg = NULL, beta = NULL) {
+
+  # ------------------------------------------------------------------------
+  # 1. Validate Precision Parameter
+  # ------------------------------------------------------------------------
   if (phi <= 0 || !is.finite(phi)) {
     warning("phi must be positive and finite; returning zero gradient")
-    # Return zero gradient with correct length
-    n_params <- 1 + length(varphi) + length(theta) + 1
+    n_params <- 1 + length(varphi) + length(theta) + 1 + length(beta)
     return(rep(0, n_params))
   }
   
-  # ------------------------------------------------------------------------- #
-  # --- 2. Determine Model Structure ---
-  # ------------------------------------------------------------------------- #
-  # Handle cases where ar/ma might be NA, NULL, or empty
+  # ------------------------------------------------------------------------
+  # 2. Determine Model Structure
+  # ------------------------------------------------------------------------
   has_ar <- !is.null(ar) && !any(is.na(ar)) && length(ar) > 0
   has_ma <- !is.null(ma) && !any(is.na(ma)) && length(ma) > 0
+  has_xreg <- !is.null(xreg)
+  
+  if (has_xreg) {
+    if (!is.matrix(xreg)) xreg <- as.matrix(xreg)
+    if (is.null(beta)) stop("If 'xreg' is provided, 'beta' is required.")
+    if (ncol(xreg) != length(beta)) {
+      stop("Length of 'beta' must match columns of 'xreg'.")
+    }
+    if (nrow(xreg) != length(y)) {
+      stop("Number of rows in 'xreg' must match length of 'y'.")
+    }
+    # Pre-compute X * beta for efficiency
+    xb <- as.vector(xreg %*% beta)
+    n_beta_params <- length(beta)
+  } else {
+    xb <- numeric(length(y))
+    n_beta_params <- 0
+  }
   
   n_ar_params <- length(varphi)
   n_ma_params <- length(theta)
   
-  # Get lag specifications (handle empty cases)
+  # Get lag specifications
   ar_lags <- if (has_ar) ar else integer(0)
   ma_lags <- if (has_ma) ma else integer(0)
   
@@ -55,9 +73,9 @@ score_vector_barma <- function(y, ar, ma, alpha, varphi, theta, phi, link) {
     stop("Mismatch between 'ma' lags and 'theta' parameters.")
   }
   
-  # ------------------------------------------------------------------------- #
-  # --- 3. Setup Link Functions and Time Series Properties ---
-  # ------------------------------------------------------------------------- #
+  # ------------------------------------------------------------------------
+  # 3. Setup Link Functions and Time Series Properties
+  # ------------------------------------------------------------------------
   link_structure <- make_link_structure(link)
   linkfun <- link_structure$linkfun
   linkinv <- link_structure$linkinv
@@ -70,111 +88,155 @@ score_vector_barma <- function(y, ar, ma, alpha, varphi, theta, phi, link) {
   max_lag  <- max(ar_order, ma_order)
   n_obs <- length(y)
   
-  # Check for sufficient observations
   if (n_obs <= max_lag) {
     warning("Insufficient observations for the specified lag structure")
-    n_params <- 1 + n_ar_params + n_ma_params + 1
+    n_params <- 1 + n_ar_params + n_ma_params + 1 + n_beta_params
     return(rep(0, n_params))
   }
   
-  # ------------------------------------------------------------------------- #
-  # --- 4. Recursive Calculation of Predictor, Error, and Derivatives ---
-  # ------------------------------------------------------------------------- #
+  # ------------------------------------------------------------------------
+  # 4. Recursive Calculation: Predictor, Error, and Derivatives
+  # ------------------------------------------------------------------------
   error <- rep(0, n_obs)
   eta   <- rep(NA_real_, n_obs)
+  
+  # Initialize derivative matrices
   d_eta_d_alpha  <- rep(0, n_obs)
-  d_eta_d_varphi <- if (has_ar) matrix(0, nrow = n_obs, ncol = n_ar_params) else matrix(0, nrow = n_obs, ncol = 0)
-  d_eta_d_theta  <- if (has_ma) matrix(0, nrow = n_obs, ncol = n_ma_params) else matrix(0, nrow = n_obs, ncol = 0)
+  
+  d_eta_d_varphi <- if (has_ar) {
+    matrix(0, nrow = n_obs, ncol = n_ar_params)
+  } else {
+    matrix(0, nrow = n_obs, ncol = 0)
+  }
+  
+  d_eta_d_theta <- if (has_ma) {
+    matrix(0, nrow = n_obs, ncol = n_ma_params)
+  } else {
+    matrix(0, nrow = n_obs, ncol = 0)
+  }
+  
+  d_eta_d_beta <- if (has_xreg) {
+    matrix(0, nrow = n_obs, ncol = n_beta_params)
+  } else {
+    matrix(0, nrow = n_obs, ncol = 0)
+  }
   
   for (t in (max_lag + 1):n_obs) {
     
-    # --- Part A: Compute Linear Predictor and Score Error ---
-    # ----------------------------------------------------------------------- #
-    eta[t] <- alpha
+    # Part A: Compute Linear Predictor (Eta) ---
+    # Model: alpha + X*beta + AR(y - X*beta) + MA(error)
+    eta[t] <- alpha + xb[t]
     
     if (has_ar) {
-      eta[t] <- eta[t] + as.numeric(crossprod(varphi, ynew[t - ar_lags]))
+      # AR term acts on the "regression residual" (ynew - xb)
+      prev_terms <- ynew[t - ar_lags] - xb[t - ar_lags]
+      eta[t] <- eta[t] + as.numeric(crossprod(varphi, prev_terms))
     }
     
     if (has_ma) {
       eta[t] <- eta[t] + as.numeric(crossprod(theta, error[t - ma_lags]))
     }
     
-    # The score error is defined on the predictor scale
     error[t] <- ynew[t] - eta[t]
     
-    # --- Part B: Compute Recursive Derivatives of the Linear Predictor ---
-    # ----------------------------------------------------------------------- #
-    # Derivative w.r.t. alpha
+    # Part B: Compute Recursive Derivatives ---
+    
+    # 1. Derivative w.r.t. Alpha
     d_eta_d_alpha[t] <- 1
     if (has_ma) {
-      # Recursion: d(eta_t)/d(alpha) = 1 - sum(theta * d(eta_{t-j})/d(alpha))
-      d_eta_d_alpha[t] <- 1 - as.numeric(crossprod(theta,
-                                                   d_eta_d_alpha[t - ma_lags]))
+      d_eta_d_alpha[t] <- 1 - as.numeric(
+        crossprod(theta, d_eta_d_alpha[t - ma_lags])
+      )
     }
     
-    # Derivative w.r.t. AR coefficients (varphi)
+    # 2. Derivative w.r.t. AR (Varphi)
     if (has_ar) {
-      # Base term: d(eta_t)/d(varphi_i) starts with ynew_{t-lag_i}
-      d_eta_d_varphi[t, ] <- ynew[t - ar_lags]
+      # Base: ynew - X*beta at lags
+      d_eta_d_varphi[t, ] <- ynew[t - ar_lags] - xb[t - ar_lags]
       if (has_ma) {
-        # Recursive term from the MA component
-        d_eta_d_varphi[t, ] <- d_eta_d_varphi[t, ] -
-          as.numeric(crossprod(theta, d_eta_d_varphi[t - ma_lags, , drop = FALSE]))
+        ma_effect <- crossprod(theta, d_eta_d_varphi[t - ma_lags, , drop = FALSE])
+        d_eta_d_varphi[t, ] <- d_eta_d_varphi[t, ] - as.numeric(ma_effect)
       }
     }
     
-    # Derivative w.r.t. MA coefficients (theta)
+    # 3. Derivative w.r.t. MA (Theta)
     if (has_ma) {
-      # Base term: d(eta_t)/d(theta_j) starts with error_{t-lag_j}
       d_eta_d_theta[t, ] <- error[t - ma_lags]
-      # Recursive term from the MA component
-      d_eta_d_theta[t, ] <- d_eta_d_theta[t, ] -
-        as.numeric(crossprod(theta, d_eta_d_theta[t - ma_lags, , drop = FALSE]))
+      ma_effect <- crossprod(theta, d_eta_d_theta[t - ma_lags, , drop = FALSE])
+      d_eta_d_theta[t, ] <- d_eta_d_theta[t, ] - as.numeric(ma_effect)
+    }
+    
+    # 4. Derivative w.r.t. Beta (Regressors)
+    if (has_xreg) {
+      # Base: x_t - sum(varphi * x_{t-k})
+      base_grad <- xreg[t, ]
+      if (has_ar) {
+        # Calculate sum(varphi_k * x_{t-k})
+        # crossprod: (1 x p) * (p x k) -> (1 x k)
+        ar_adjustment <- crossprod(
+          varphi,
+          xreg[t - ar_lags, , drop = FALSE]
+        )
+        base_grad <- base_grad - as.numeric(ar_adjustment)
+      }
+      
+      d_eta_d_beta[t, ] <- base_grad
+      
+      if (has_ma) {
+        ma_effect <- crossprod(theta, d_eta_d_beta[t - ma_lags, , drop = FALSE])
+        d_eta_d_beta[t, ] <- d_eta_d_beta[t, ] - as.numeric(ma_effect)
+      }
     }
   }
   
-  # ------------------------------------------------------------------------- #
-  # --- 5. Calculate Score Vector Components ---
-  # ------------------------------------------------------------------------- #
+  # ------------------------------------------------------------------------
+  # 5. Calculate Score Vector Components
+  # ------------------------------------------------------------------------
   eta_effective <- eta[(max_lag + 1):n_obs]
   y_effective   <- y[(max_lag + 1):n_obs]
   mu_effective  <- linkinv(eta = eta_effective)
   
-  # Bounds check for numerical stability
+  # Numerical stability check
   if (any(mu_effective <= 0 | mu_effective >= 1 | !is.finite(mu_effective))) {
     warning("mu_effective out of bounds; returning zero gradient")
-    n_params <- 1 + n_ar_params + n_ma_params + 1
+    n_params <- 1 + n_ar_params + n_ma_params + 1 + n_beta_params
     return(rep(0, n_params))
   }
   
-  # Common component for scores of alpha, AR, and MA
   mu_eta_val <- mu_eta_fun(eta = eta_effective)
   ystar <- linkfun(y_effective)
   mustar <- digamma(mu_effective * phi) - digamma((1 - mu_effective) * phi)
+  
+  # Chain rule common term: dL/deta = dL/dmu * dmu/deta
   common_term <- mu_eta_val * (ystar - mustar)
   
-  # Score for alpha
-  score_alpha <- as.numeric(phi * crossprod(
-    d_eta_d_alpha[(max_lag + 1):n_obs], common_term))
+  # Compute final scores (gradient = sum(dL/deta * deta/dparam))
+  # Using crossprod for sum(vector * vector)
   
-  # Score for AR coefficients
+  idx <- (max_lag + 1):n_obs
+  
+  score_alpha <- as.numeric(
+    phi * crossprod(d_eta_d_alpha[idx], common_term)
+  )
+  
   score_varphi <- if (has_ar) {
-    as.numeric(phi * crossprod(
-      d_eta_d_varphi[(max_lag + 1):n_obs, , drop = FALSE], common_term))
+    as.numeric(phi * crossprod(d_eta_d_varphi[idx, , drop = FALSE], common_term))
   } else {
     numeric(0)
   }
   
-  # Score for MA coefficients
   score_theta <- if (has_ma) {
-    as.numeric(phi * crossprod(
-      d_eta_d_theta[(max_lag + 1):n_obs, , drop = FALSE], common_term))
+    as.numeric(phi * crossprod(d_eta_d_theta[idx, , drop = FALSE], common_term))
   } else {
     numeric(0)
   }
   
-  # Score for the precision parameter phi
+  score_beta <- if (has_xreg) {
+    as.numeric(phi * crossprod(d_eta_d_beta[idx, , drop = FALSE], common_term))
+  } else {
+    numeric(0)
+  }
+  
   score_phi <- sum(
     mu_effective * (ystar - mustar) +
       log(1 - y_effective) -
@@ -182,17 +244,19 @@ score_vector_barma <- function(y, ar, ma, alpha, varphi, theta, phi, link) {
       digamma(phi)
   )
   
-  # ------------------------------------------------------------------------- #
-  # --- 6. Assemble and Return the Final Score Vector ---
-  # ------------------------------------------------------------------------- #
-  final_score_vector <- c(score_alpha, score_varphi, score_theta, score_phi)
+  # ------------------------------------------------------------------------
+  # 6. Assemble and Return
+  # ------------------------------------------------------------------------
+  final_score <- c(score_alpha,
+                   score_varphi, 
+                   score_theta, 
+                   score_phi, 
+                   score_beta)
   
-  # Check for non-finite values
-  if (any(!is.finite(final_score_vector))) {
+  if (any(!is.finite(final_score))) {
     warning("Non-finite values in score vector; returning zeros")
-    n_params <- 1 + n_ar_params + n_ma_params + 1
-    return(rep(0, n_params))
+    return(rep(0, length(final_score)))
   }
   
-  return(as.numeric(final_score_vector))
+  return(as.numeric(final_score))
 }

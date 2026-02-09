@@ -42,6 +42,62 @@ library(here)
 library(stats)
 
 # ============================================================================
+# Helper function
+# ============================================================================
+reorder_values <- function(fit) {
+  # 1. Setup indices
+  n_total <- length(fit$coef)
+  n_ar    <- length(fit$varphi)
+  n_ma    <- length(fit$theta)
+  
+  # The fixed ARMA part (AR + MA + Intercept)
+  indx_arma <- seq_len(n_ar + n_ma + 1) 
+  
+  # Locate phi, after ARMA
+  indx_phi <- n_ar + n_ma + 2
+  
+  # Locate Regressors: Everything else
+  all_indices <- seq_len(n_total)
+  indx_reg <- setdiff(all_indices, c(indx_arma, indx_phi))
+  
+  # 2. Define the target order: [ARMA] -> [Regressors] -> [phi]
+  new_order <- c(indx_arma, indx_reg, indx_phi)
+  
+  # 3. Reorder
+  # Using drop=FALSE ensures we keep matrix dimensions even if it's 1x1
+  coef_ord   <- fit$coef[new_order]
+  vcov_ord   <- fit$vcov[new_order, new_order, drop = FALSE]
+  
+  return(list(
+    coef_old_ord = coef_ord,
+    fit_vcov_ord = vcov_ord
+  ))
+}
+
+
+
+# ============================================================================
+# EXAMPLE USAGE
+# ============================================================================
+
+# After fitting barma_old
+# fit_old <- barma_old(y = y, ar = ar, ma = ma, X = X, X_hat = X_hat, ...)
+
+# Reorder
+# reorder_list <- reorder_values(fit_old)
+
+# Extract reordered values
+# coef_old <- reorder_list$coef_old_ord
+# fisher_info_mat_old <- reorder_list$fisher_info_mat_old_ord
+# fit_vcov <- reorder_list$fit_vcov_ord
+
+# Verify parameter counts
+# cat("n_ar:", reorder_list$n_ar, "\n")
+# cat("n_ma:", reorder_list$n_ma, "\n")
+# cat("n_beta:", reorder_list$n_beta, "\n")
+
+
+# ============================================================================
 # MAIN FUNCTION: Compare Single Seed
 # ============================================================================
 compare_barma_seed <- function(
@@ -54,7 +110,9 @@ compare_barma_seed <- function(
     varphi_true = 0.4,
     theta_true = NA,
     alpha_true = 0,
-    phi_true = 20) {
+    phi_true = 20,
+    X = NA,
+    X_hat = NA) {
   
   # ------------------------------------------------------------------------- #
   # --- 1. Load All Functions ---
@@ -117,7 +175,9 @@ compare_barma_seed <- function(
       ar = ar,
       ma = ma,
       link = link,
-      h1 = 6
+      h1 = 6,
+      X = X,
+      X_hat = X_hat
     )
   })
   cat("  Time (old):", round(time_old_run["elapsed"], 4), "s\n")
@@ -125,6 +185,7 @@ compare_barma_seed <- function(
   # ------------------------------------------------------------------------- #
   # --- 4. Fit NEW Model ---
   # ------------------------------------------------------------------------- #
+  if (any(is.na(X))) X = NULL
   
   cat("Fitting barma() (new)...\n")
   time_new_run <- system.time({
@@ -132,21 +193,54 @@ compare_barma_seed <- function(
       y = y,
       ar = ar,
       ma = ma,
-      link = link
+      link = link,
+      xreg = X
     )
   })
   cat("  Time (new):", round(time_new_run["elapsed"], 4), "s\n")
   
   # ------------------------------------------------------------------------- #
-  # --- 5. Run All Comparisons ---
+  # --- 5. Reorder values ---
   # ------------------------------------------------------------------------- #
   
+  if (!is.null(fit_old$beta)) {
+    reorder_values_list <- reorder_values(fit_old)
+    
+    coef_old = reorder_values_list$coef_old_ord
+    vcov_old = reorder_values_list$fit_vcov_ord
+    
+  } else {
+    
+    coef_old = fit_old$coef
+    vcov_old = fit_old$vcov
+    
+  }
+  
+  # ------------------------------------------------------------------------- #
+  # Forecast
+  # ------------------------------------------------------------------------- #
+  
+  if (!is.null(fit_old$beta)) {
+    
+    forecast_new <- forecast.barma(object = fit_new, xreg = X_hat,  h = 6)
+    
+  } else {
+    
+    forecast_new <- forecast.barma(object = fit_new,  h = 6)
+    
+  }
+  
+  
+  
+  # ------------------------------------------------------------------------- #
+  # --- 6. Run All Comparisons ---
+  # ------------------------------------------------------------------------- #
   cat("--------------------------------------------", "\n")
   print(
     rbind(
       barma_new = c(fit_new$conv, fit_new$coef),
-      barma_old = c(fit_old$conv, fit_old$coef),
-      difference = c(NA, fit_new$coef - fit_old$coef)
+      barma_old = c(fit_old$conv, coef_old),
+      difference = c(NA, fit_new$coef - coef_old)
     )
   )
   cat("--------------------------------------------", "\n")
@@ -159,19 +253,20 @@ compare_barma_seed <- function(
   res_new <- residuals(fit_new)
   fit_new_fitted <- fitted(fit_new)
   coef_new <- coef(fit_new)
-  forecast_new <- forecast.barma(object = fit_new, h = 6)
+  
   
   # --- List outputs from OLD function ---
   start_values_old <- fit_old$start_values
   res_old <- fit_old$resid2
   fit_old_fitted <- fit_old$fitted
-  coef_old <- fit_old$coef
+  # coef_old <- fit_old$coef
+  # vcov_old <- fit_old$vcov
   sum_old_table <- fit_old$model
   loglik_old <- fit_old$loglik
   aic_old <- fit_old$aic
   bic_old <- fit_old$bic
   hq_old <- fit_old$hq
-  vcov_old <- fit_old$vcov
+  
   forecast_old <- fit_old$forecast
   
   # --- Index for effective observations ---
@@ -211,13 +306,6 @@ compare_barma_seed <- function(
                  as.numeric(vcov_old), 
                  as.numeric(sum_new$vcov))
   
-
-  # print('vcov_old: ')
-  # print(vcov_old)
-  
-  # print('sum_new$vcov: ')
-  # print(sum_new$vcov)
-  
   # Compare effective values (stripping NAs)
   check_equality("Fitted Values",
                  fit_old_fitted[idx_effective],
@@ -231,14 +319,6 @@ compare_barma_seed <- function(
   check_equality("Forecast",
                  as.numeric(forecast_old),
                  as.numeric(forecast_new)
-  )
-  
-  # --- C4. Summary Table ---
-  cat("\n4. Comparing Summary Table (Estimates only):\n")
-  check_equality(
-    "Summary Table",
-    sum_old_table[, "Estimate"],
-    sum_new$coefficients[, "Estimate"]
   )
   
   cat("\n============================================================\n")
@@ -255,7 +335,7 @@ compare_barma_seed <- function(
 
 # --- Run the comparison for a specific seed ---
 # 
-seed = 10
+seed = 20
 ar = 1
 ma = 1:4
 n = 100
@@ -265,6 +345,8 @@ varphi_true = 0.4
 theta_true = NA
 alpha_true = 0
 phi_true = 20
+X = NA
+X_hat = NA
 
 compare_barma_seed(
   ar = ar,
@@ -276,19 +358,11 @@ compare_barma_seed(
   varphi_true = varphi_true,
   theta_true = theta_true,
   alpha_true = alpha_true,
-  phi_true = phi_true
+  phi_true = phi_true,
+  X = X,
+  X_hat = X_hat
 )
 
-# --- Run for a different model (AR(1)) ---
-# 
-#  compare_barma_seed(
-#    ar = 1,
-#    ma = NULL,
-#    seed = 5,
-#    n = 250,
-#    varphi_true = 0.6
-#  )
-#
 
 vec_train <- 1:n
 vec_test <- (max(vec_train) + 1):(max(vec_train) + 6)
@@ -303,103 +377,17 @@ X_hat = cbind(
   hc_test =  cos(2 * pi * vec_test / 12)
 )
 
-
-fit_old <- barma_old(
-  y = y,
+compare_barma_seed(
   ar = ar,
   ma = ma,
+  seed = seed,
+  n = n,
+  burn = burn,
   link = link,
-  h1 = 6,
+  varphi_true = varphi_true,
+  theta_true = theta_true,
+  alpha_true = alpha_true,
+  phi_true = phi_true,
   X = X,
   X_hat = X_hat
 )
-
-reorder_values <- function(fit) {
-  # fit = fit_old
-  
-  # extract values to reorder
-  fisher_info_mat_old <- fit$fisher_info_mat
-  vcov_old <- fit$vcov
-  
-  # -------------------------------------------------------------------- 
-  # take the indices
-  # -------------------------------------------------------------------- 
-  n_ar <- length(fit$varphi)
-  n_ma <- length(fit$theta)
-  n_reg <- length(fit$coef)
-  
-  # arma indices
-  indx_end_arma <- n_ar + n_ma + 1
-  
-  # regressors indices
-  indx_start_reg <- indx_end_arma + 2
-  indx_reg <- indx_start_reg:n_reg
-  
-  # phi indice
-  indx_phi <- n_reg - length(indx_reg)
-  
-  # -------------------------------------------------------------------- 
-  # reorder the estimates
-  # -------------------------------------------------------------------- 
-  coef_old <- fit$coef
-  
-  coef_old_ord <- c(
-    coef_old[1:indx_end_arma],
-    coef_old[indx_reg],
-    coef_old[indx_phi]
-    )
-  
-  # -------------------------------------------------------------------- 
-  # reorder the Fisher information matrix
-  # -------------------------------------------------------------------- 
-  fisher_info_mat_old <- fit$fisher_info_mat
-  
-  fisher_info_mat_old_no_phi <- fisher_info_mat_old[indx_phi,-indx_phi]
-  mat_old_phi <- fisher_info_mat_old[indx_phi,indx_phi]
-  fisher_info_mat_old_phi_ord <- c(fisher_info_mat_old_no_phi, phi = mat_old_phi)
-  
-  fisher_info_mat_old_aux <- cbind(
-    fisher_info_mat_old[-indx_phi,-indx_phi],
-    phi = fisher_info_mat_old_no_phi
-  )
-  
-  fisher_info_mat_old_ord <- rbind(
-    fisher_info_mat_old_aux,
-    phi = fisher_info_mat_old_phi_ord
-  )
-  # -------------------------------------------------------------------- 
-  # reorder the Fisher information matrix
-  # -------------------------------------------------------------------- 
-  fit_old_vcov <- fit$vcov
-  
-  fit_vcov_no_phi <- fit_old_vcov[indx_phi,-indx_phi]
-  mat_old_phi <- fit_old_vcov[indx_phi,indx_phi]
-  fit_vcov_phi_ord <- c(fit_vcov_no_phi, phi = mat_old_phi)
-  
-  fit_vcov_aux <- cbind(
-    fit_old_vcov[-indx_phi,-indx_phi],
-    phi = fit_vcov_no_phi
-  )
-  
-  fit_vcov_ord <- rbind(
-    fit_vcov_aux,
-    phi = fit_vcov_phi_ord
-  )
-  
-  return(list(coef_old_ord = coef_old_ord,
-              fisher_info_mat_old_ord = fisher_info_mat_old_ord,
-              fit_vcov_ord = fit_vcov_ord))
-  
-}
-
-if (!is.null(fit_old$beta)) {
-  reorder_values_list <- reorder_values(fit_old)
-  
-  coef_old = reorder_values_list$coef_old_ord
-  fisher_info_mat_old = reorder_values_list$fisher_info_mat_old_ord
-  fit_vcov = reorder_values_list$fit_vcov_ord
-  
-}
-
-reorder_values(fit_old)
-
