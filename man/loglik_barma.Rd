@@ -2,38 +2,186 @@
 % Please edit documentation in R/loglik_barma.R
 \name{loglik_barma}
 \alias{loglik_barma}
-\title{Log-Likelihood for a BARMA Model (Internal Version)}
+\title{Compute Conditional Log-Likelihood for Beta Autoregressive
+Moving Average Models}
 \usage{
-loglik_barma(y, ar, ma, alpha, varphi, theta, phi, link)
+loglik_barma(
+  y,
+  ar,
+  ma,
+  alpha,
+  varphi,
+  theta,
+  phi,
+  link,
+  xreg = NULL,
+  beta = NULL
+)
 }
 \arguments{
-\item{y}{A numeric vector representing the time series data, with values in
-(0, 1).}
+\item{y}{A numeric vector representing the time series data, with values
+strictly in (0, 1).}
 
-\item{ar}{A numeric vector specifying the autoregressive (AR) lags.
-Can be NA or NULL if no AR component.}
+\item{ar}{A numeric vector specifying the autoregressive (AR) lags
+(e.g., \code{c(1, 2)}). Can be \code{NA} or \code{NULL} if no AR component.}
 
-\item{ma}{A numeric vector specifying the moving average (MA) lags.
-Can be NA or NULL if no MA component.}
+\item{ma}{A numeric vector specifying the moving average (MA) lags
+(e.g., \code{1}). Can be \code{NA} or \code{NULL} if no MA component.}
 
-\item{alpha}{The intercept term.}
+\item{alpha}{The intercept term (numeric scalar).}
 
 \item{varphi}{A numeric vector of autoregressive (AR) parameters.
-Use numeric(0) or empty vector if no AR component.}
+Use \code{numeric(0)} or empty vector if no AR component.
+Length must match \code{ar} specification.}
 
 \item{theta}{A numeric vector of moving average (MA) parameters.
-Use numeric(0) or empty vector if no MA component.}
+Use \code{numeric(0)} or empty vector if no MA component.
+Length must match \code{ma} specification.}
 
-\item{phi}{The precision parameter of the BARMA model (must be positive).}
+\item{phi}{The precision parameter of the BARMA model (must be positive and finite).
+Larger values indicate less variance for a given mean.}
 
-\item{link}{A character string for the link function (e.g., "logit").}
+\item{link}{A character string specifying the link function:
+\code{"logit"} (default), \code{"probit"}, or \code{"cloglog"}.}
+
+\item{xreg}{A matrix or data frame of static regressors (optional).
+Must have the same number of rows as length of \code{y}.}
+
+\item{beta}{A numeric vector of regression coefficients for \code{xreg} (optional).
+Length must match number of columns in \code{xreg}.}
 }
 \value{
-The conditional log-likelihood value of the BARMA model.
+A numeric scalar representing the conditional log-likelihood value.
+Returns \code{-Inf} if:
+\itemize{
+  \item \code{phi} is non-positive or non-finite
+  \item Insufficient observations for specified lag structure
+  \item Fitted values are outside (0, 1)
+  \item Any numerical issues occur
+}
 }
 \description{
-This function computes the log-likelihood of the BARMA model.
- It is designed to be called with named parameters, making it
- easy to test and debug.
+Computes the conditional log-likelihood of a Beta Autoregressive
+Moving Average (BARMA) model. This function is designed for users who:
+\itemize{
+  \item Implement custom optimization algorithms
+  \item Verify theoretical properties
+  \item Conduct simulation studies
+  \item Debug model fitting
+  \item Integrate BARMA models into their own workflows
 }
-\keyword{internal}
+}
+\details{
+Log-Likelihood for BARMA Models
+
+
+The log-likelihood is computed as:
+\deqn{\ell = \sum_{t=m+1}^{n} \log f(y_t | \mu_t, \phi)}
+
+where \eqn{f} is the Beta density with shape parameters
+\eqn{shape1 = \mu_t * \phi} and \eqn{shape2 = (1-\mu_t)*\phi}.
+
+The linear predictor is constructed as:
+\deqn{\eta_t = \alpha + X_t \beta + \sum_{i=1}^{p} \varphi_i 
+(y_{t-i} - X_{t-i}\beta) + \sum_{j=1}^{q} \theta_j \epsilon_{t-j}}
+
+**Important**: This function implements the corrections from the 2017
+Erratum (Rocha & Cribari-Neto, 2017) for moving average components.
+See References section for details.
+
+**Parameter Order**: Parameters should be supplied in the order:
+alpha, varphi (AR), theta (MA), phi, beta (regressors).
+This matches the parameter order used by \code{\link{barma}}.
+}
+\examples{
+\dontrun{
+  # Example 1: Simulate a BAR(1) process and compute log-likelihood
+  # Simulate data from a BARMA(1,0) model [i.e., BAR(1)]
+  set.seed(123)
+  y <- simu_barma(
+    n = 100,
+    alpha = -0.5,
+    varphi = 0.6,
+    phi = 25.0,
+    link = "logit"
+  )
+
+  # Compute log-likelihood using the true parameters
+  loglik_barma(
+    y = y,
+    ar = 1,
+    ma = NA,
+    alpha = -0.5,
+    varphi = 0.6,
+    theta = numeric(0),
+    phi = 25.0,
+    link = "logit"
+  )
+
+  # Example 2: Simulate a BARMA(1,1) process
+  # Simulate data from a BARMA(1,1) model
+  y <- simu_barma(
+    n = 100,
+    alpha = -0.5,
+    varphi = 0.6,
+    theta = 0.3,
+    phi = 25.0,
+    link = "logit"
+  )
+
+  # Compute log-likelihood for ARMA(1,1) structure
+  loglik_barma(
+    y = y,
+    ar = 1,
+    ma = 1,
+    alpha = -0.5,
+    varphi = 0.6,
+    theta = 0.3,
+    phi = 25.0,
+    link = "logit"
+  )
+
+  # Example 3: With external regressors
+  # Simulate BARMA(1,0) with regressors
+  set.seed(456)
+  y <- simu_barma(
+    n = 100,
+    alpha = -0.3,
+    varphi = 0.5,
+    phi = 20.0,
+    link = "logit"
+  )
+
+  # Create external regressors
+  X <- matrix(rnorm(100), nrow = 100, ncol = 1)
+
+  # Compute log-likelihood with regressors
+  loglik_barma(
+    y = y,
+    ar = 1,
+    ma = NA,
+    alpha = -0.3,
+    varphi = 0.5,
+    theta = numeric(0),
+    phi = 20.0,
+    link = "logit",
+    xreg = X,
+    beta = 0.2
+  )
+}
+
+}
+\references{
+Rocha, A.V., & Cribari-Neto, F. (2009). Beta autoregressive moving
+average models. \emph{TEST}, 18(3), 529-545.
+\doi{10.1007/s11749-008-0112-z}
+
+Rocha, A.V., & Cribari-Neto, F. (2017). Erratum to: Beta autoregressive
+moving average models. \emph{TEST}, 26, 451-459.
+\doi{10.1007/s11749-017-0528-4}
+}
+\seealso{
+\code{\link{barma}} for model fitting,
+\code{\link{score_vector_barma}} for gradient computation,
+\code{\link{fim_barma}} for Fisher Information Matrix
+}

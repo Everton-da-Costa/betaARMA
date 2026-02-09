@@ -164,7 +164,7 @@
 #'   summary(fit_xreg)
 #' }
 #'
-#' @importFrom stats is.ts optim
+#' @importFrom stats is.ts optim dbeta frequency pnorm start ts
 #'
 #' @export
 barma <- function(

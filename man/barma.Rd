@@ -2,77 +2,168 @@
 % Please edit documentation in R/barma.R
 \name{barma}
 \alias{barma}
-\title{Fit Beta Autoregressive Moving Average (βARMA) Models}
+\title{Fit Beta Autoregressive Moving Average (BARMA) Models via Maximum Likelihood}
 \usage{
-barma(y, ar = NA, ma = NA, link = "logit")
+barma(y, ar = NA, ma = NA, link = "logit", xreg = NULL)
 }
 \arguments{
-\item{y}{A time series object (`ts`) with values in (0, 1).}
+\item{y}{A time series object (`ts`) with values strictly in the open interval (0, 1).
+Must have at least \eqn{\max(p,q) + 1} observations.}
 
-\item{ar}{A numeric vector of autoregressive (AR) lags (e.g., `c(1, 2)`).}
+\item{ar}{A numeric vector specifying autoregressive (AR) lags
+(e.g., `c(1, 2)` for AR(2)). Set to `NA` for models without AR component.
+Default is `NA`.}
 
-\item{ma}{A numeric vector of moving average (MA) lags (e.g., `1`).}
+\item{ma}{A numeric vector specifying moving average (MA) lags
+(e.g., `1` for MA(1)). Set to `NA` for models without MA component.
+Default is `NA`.}
 
-\item{link}{The link function to connect the mean to the linear
-predictor. Default is `"logit"`.}
+\item{link}{The link function connecting the mean \eqn{\mu_t} to the linear predictor
+\eqn{\eta_t}. One of:
+\itemize{
+  \item `"logit"` (default): \eqn{g(x) = \log(x/(1-x))}
+  \item `"probit"`: \eqn{g(x) = \Phi^{-1}(x)}
+  \item `"cloglog"`: Complementary log-log link
+  \item `"loglog"`: Log-log link
+}}
+
+\item{xreg}{A matrix or data frame of external regressors (covariates), optional.
+Must have the same number of rows as `y`. If provided, its columns
+are included in the linear predictor with associated coefficients in `beta`.}
 }
 \value{
-A list containing the fitted model results:
-\item{model}{A summary table of coefficients, standard errors, z-values,
-  and p-values.}
-\item{coef}{A named vector of all estimated coefficients.}
-\item{vcov}{The variance-covariance matrix of the coefficients.}
-\item{fitted}{The in-sample fitted mean values (`muhat`).}
-\item{loglik}{The value of the log-likelihood function at the optimum.}
-\item{aic, bic, hq}{Akaike, Bayesian, and Hannan-Quinn information
-  criteria.}
-\item{conv}{Convergence code from `optim` (`0` indicates success).}
-\item{phi, alpha, varphi, theta}{Individual estimated parameters.}
-\item{etahat}{The estimated linear predictor values.}
-\item{muhat}{The estimated mean values (same as `fitted`).}
-\item{errorhat}{The estimated errors on the predictor scale.}
+An object of class `"barma"` containing:
+\item{coef}{Named vector of all estimated parameters, ordered as:
+  alpha, AR parameters, MA parameters, beta parameters, phi.}
+\item{vcov}{The variance-covariance matrix of the estimators, computed as
+  the inverse of the observed Fisher Information Matrix.}
+\item{model}{A summary table with coefficients, standard errors, z-statistics,
+  and p-values for hypothesis tests \eqn{H_0: \theta_i = 0}.}
+\item{fitted}{Fitted conditional mean values as a `ts` object
+  (NA-padded for burn-in period).}
+\item{muhat}{Alias for `fitted` (fitted mean values).}
+\item{etahat}{Estimated linear predictor values (full vector, NA-padded).}
+\item{errorhat}{Estimated errors on predictor scale (full vector, 0-padded).}
+\item{loglik}{The conditional log-likelihood at the MLE.}
 \item{fisher_info_mat}{The observed Fisher Information Matrix.}
-\item{start_values}{Initial values used in the optimization.}
-\item{status_inv_inf_matrix}{Indicates if the Fisher matrix was
-  invertible (`0` = success, `1` = failure).}
-\item{opt}{The raw output object from the `optim` call.}
+\item{conv}{Convergence code from `optim` (0 = success).}
+\item{alpha, beta, varphi, theta, phi}{Individual parameter estimates.}
+\item{start_values}{Initial parameter values used in optimization.}
+\item{call}{The original function call.}
+\item{opt}{Raw output object from `optim()` call.}
 }
 \description{
-Fits Beta Autoregressive Moving Average (βARMA) models for time series 
-valued in (0, 1) via standard Maximum Likelihood Estimation (MLE).
+Fits a Beta Autoregressive Moving Average (BARMA) model to time series data
+valued in (0, 1) using Maximum Likelihood Estimation (MLE). The function
+performs complete model estimation including parameter estimation, hypothesis
+testing infrastructure, and model diagnostics.
 }
 \details{
-This function fits the βARMA(p,q) model as proposed by Rocha & 
-Cribari-Neto (2009, with erratum 2017). It serves as the main wrapper 
-for the optimization process, calling helper functions for the 
-log-likelihood, score vector, and Fisher Information Matrix.
+Fit Beta Autoregressive Moving Average (BARMA) Models
 
-The model is specified via the `ar` and `ma` arguments:
+
+This function fits the BARMA(p,q) model as proposed by Rocha & Cribari-Neto
+(2009, with erratum 2017). It serves as the main wrapper for the optimization
+process, calling specialized helper functions for likelihood computation,
+gradient calculation, and Fisher Information Matrix estimation.
+
+**Model Specification**: The BARMA model is defined as:
+
+\deqn{g(\mu_t) = \alpha + X_t\beta + \sum_{i=1}^{p} \varphi_i 
+(g(y_{t-i}) - X_{t-i}\beta) + \sum_{j=1}^{q} \theta_j \epsilon_{t-j}}
+
+where \eqn{y_t | F_{t-1} \sim Beta(\mu_t\phi, (1-\mu_t)\phi)},
+\eqn{g(\cdot)} is the link function, and \eqn{F_{t-1}} is the information
+set at time t-1.
+
+**Model Types** (specified via `ar` and `ma` arguments):
 \itemize{
-  \item βARMA(p,q): `ar` and `ma` are specified.
-  \item βAR(p): Specify `ar` and set `ma = NA`.
-  \item βMA(q): Specify `ma` and set `ar = NA`.
+  \item **BARMA(p,q):** Both `ar` and `ma` are specified.
+  \item **BAR(p):** Only `ar` is specified; set `ma = NA`.
+  \item **BMA(q):** Only `ma` is specified; set `ar = NA`.
 }
 
-The optimization is performed using the "BFGS" algorithm via the
-`optim` function.
+**External Regressors**: Covariates can be included via `xreg`. The model
+becomes a regression BARMA, where the mean depends on current covariates
+and lagged responses/errors.
+
+**Optimization**: The function uses the BFGS quasi-Newton algorithm via
+\code{\link{optim}} with analytic gradients for efficiency. Initial values
+are obtained from the `start_values()` function.
+
+**Implementation Notes**: 
+- The conditional log-likelihood is computed, conditioning on the first
+  \eqn{m = \max(p,q)} observations (burn-in period).
+- The 2017 Erratum corrections are implemented for correct handling of
+  moving average components in the score vector and Fisher Information Matrix.
+- All computations are vectorized where possible for efficiency.
 }
 \note{
 The original version of this function was developed by Fabio M. Bayer
- (bayer@ufsm.br). Substantially modified and improved by Everton da Costa
- (everton.ecosta@ufpe.br). With suggestions and contributions from
- Francisco Cribari Neto (francisco.cribari@ufpe.br).
+(Federal University of Santa Maria, \email{bayer@ufsm.br}). It has been
+substantially modified and improved by Everton da Costa, with suggestions
+and contributions from Francisco Cribari-Neto.
+}
+\examples{
+\dontrun{
+  # Example 1: Fit a BAR(1) model
+  set.seed(123)
+  y <- simu_barma(
+    n = 100,
+    alpha = -0.5,
+    varphi = 0.6,
+    phi = 25.0,
+    link = "logit"
+  )
+
+  # Fit the model
+  fit <- barma(y, ar = 1, link = "logit")
+
+  # View results
+  summary(fit)
+  coef(fit)
+
+  # Example 2: Fit a BARMA(1,1) model
+  y_arma <- simu_barma(
+    n = 100,
+    alpha = -0.5,
+    varphi = 0.6,
+    theta = 0.3,
+    phi = 25.0,
+    link = "logit"
+  )
+
+  # Fit ARMA structure
+  fit_arma <- barma(y_arma, ar = 1, ma = 1, link = "logit")
+  summary(fit_arma)
+
+  # Example 3: Model with external regressors
+  X <- matrix(rnorm(100), nrow = 100, ncol = 1)
+  colnames(X) <- "X1"
+
+  fit_xreg <- barma(y, ar = 1, link = "logit", xreg = X)
+  summary(fit_xreg)
+}
+
 }
 \references{
 Rocha, A.V., & Cribari-Neto, F. (2009). Beta autoregressive moving
-average models. *TEST*, 18(3), 529-545.
-<doi:10.1007/s11749-008-0113-2>
+average models. \emph{TEST}, 18(3), 529-545.
+\doi{10.1007/s11749-008-0112-z}
 
 Rocha, A.V., & Cribari-Neto, F. (2017). Erratum to: Beta autoregressive
-moving average models. *TEST*, 26, 451–459.
-<doi:10.1007/s11749-017-0528-4>
+moving average models. \emph{TEST}, 26, 451-459.
+\doi{10.1007/s11749-017-0528-4}
+}
+\seealso{
+\code{\link{simu_barma}} for simulation,
+\code{\link{loglik_barma}} for likelihood computation,
+\code{\link{score_vector_barma}} for gradient computation,
+\code{\link{fim_barma}} for Fisher Information Matrix
 }
 \author{
-Everton da Costa (everton.ecosta@ufpe.br);
-Francisco Cribari-Neto (francisco.cribari@ufpe.br);
+Everton da Costa (Federal University of Pernambuco, 
+\email{everton.ecosta@ufpe.br});
+Francisco Cribari-Neto (Federal University of Pernambuco, 
+\email{francisco.cribari@ufpe.br})
 }

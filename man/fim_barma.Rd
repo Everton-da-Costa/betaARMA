@@ -2,39 +2,218 @@
 % Please edit documentation in R/fim_barma.R
 \name{fim_barma}
 \alias{fim_barma}
-\title{FIM and Fitted Values for a BARMA Model (Internal)}
+\title{Compute Fisher Information Matrix for Beta Autoregressive
+Moving Average Models}
 \usage{
-fim_barma(y, ar, ma, alpha, varphi, theta, phi, link)
+fim_barma(y, ar, ma, alpha, varphi, theta, phi, link, xreg = NULL, beta = NULL)
 }
 \arguments{
 \item{y}{A numeric vector representing the time series data, in (0, 1).}
 
-\item{ar}{A numeric vector specifying the autoregressive (AR) lags.}
+\item{ar}{A numeric vector specifying the autoregressive (AR) lags
+(e.g., \code{c(1, 2)}). Can be \code{NA} or \code{NULL} if no AR component.}
 
-\item{ma}{A numeric vector specifying the moving average (MA) lags.}
+\item{ma}{A numeric vector specifying the moving average (MA) lags
+(e.g., \code{1}). Can be \code{NA} or \code{NULL} if no MA component.}
 
-\item{alpha}{The intercept term.}
+\item{alpha}{The intercept term (numeric scalar).}
 
-\item{varphi}{A numeric vector of autoregressive (AR) parameters.}
+\item{varphi}{A numeric vector of autoregressive (AR) parameters.
+Use \code{numeric(0)} or empty vector if no AR component.
+Length must match \code{ar} specification.}
 
-\item{theta}{A numeric vector of moving average (MA) parameters.}
+\item{theta}{A numeric vector of moving average (MA) parameters.
+Use \code{numeric(0)} or empty vector if no MA component.
+Length must match \code{ma} specification.}
 
-\item{phi}{The precision parameter of the BARMA model.}
+\item{phi}{The precision parameter of the BARMA model (must be positive and finite).
+Larger values indicate less variance for a given mean.}
 
-\item{link}{The link function to be used.}
+\item{link}{A character string specifying the link function:
+\code{"logit"} (default), \code{"probit"}, or \code{"cloglog"}.}
+
+\item{xreg}{A matrix or data frame of static regressors (optional).
+Must have the same number of rows as length of \code{y}.}
+
+\item{beta}{A numeric vector of regression coefficients for \code{xreg} (optional).
+Length must match number of columns in \code{xreg}.}
 }
 \value{
-A list with the following elements:
-  - 'fisher_info_mat': The Fisher information matrix.
-  - 'fitted_ts': The fitted values (conditional mean) as a 'ts' object.
-  - 'muhat_effective': The effective vector of fitted conditional means.
-  - 'etahat_full': The full vector (NA-padded) of the linear predictor.
-  - 'errorhat_full': The full vector of errors on the predictor scale.
+A list containing:
+\item{fisher_info_mat}{The Fisher Information Matrix (numeric matrix).
+  Dimensions: \code{(k+p+q+2) x (k+p+q+2)} where k is number of regressors,
+  p is AR order, q is MA order. The matrix is symmetric and should be
+  positive definite at the MLE.}
+\item{fitted_ts}{The fitted values (conditional mean) as a \code{ts} object,
+  with the same time index as the input \code{y}. Values for the
+  burn-in period (first max_lag observations) are \code{NA}.}
+\item{muhat_effective}{The fitted conditional means (numeric vector)
+  excluding the burn-in period.}
+\item{etahat_full}{The estimated linear predictor values (numeric vector,
+  length = length(y)), with \code{NA} for burn-in period.}
+\item{errorhat_full}{The estimated errors on the predictor scale
+  (numeric vector, length = length(y)), zero-padded for burn-in period.}
 }
 \description{
-This function computes the Fisher information matrix of the
-  Beta Autoregressive Moving Average (BARMA) model. It also efficiently
-  returns auxiliary values like fitted values and residuals required
-  by the main 'barma' function.
+Computes the observed Fisher Information Matrix (FIM) of a Beta
+Autoregressive Moving Average (BARMA) model. This function also
+efficiently returns auxiliary values like fitted values and residuals.
+
+This function is designed for users who:
+\itemize{
+  \item Compute standard errors of parameter estimates
+  \item Construct confidence intervals
+  \item Perform hypothesis tests
+  \item Verify theoretical properties
+  \item Conduct simulation studies
 }
-\keyword{internal}
+}
+\details{
+Fisher Information Matrix for BARMA Models
+
+
+The Fisher Information Matrix is computed from the outer product of
+score vectors at the MLE, which provides the observed FIM. The FIM
+is used to obtain standard errors via \code{sqrt(diag(solve(FIM)))}.
+
+**Non-Diagonal Structure**: Unlike generalized linear models, the FIM
+is not block-diagonal due to the coupling introduced by the ARMA
+dynamics. This is documented in the Rocha & Cribari-Neto (2009) paper.
+
+**Important**: This function implements the corrections from the 2017
+Erratum (Rocha & Cribari-Neto, 2017) for moving average components.
+See References section for details.
+
+**Parameter Order**: Parameters should be supplied in the order:
+alpha, varphi (AR), theta (MA), phi, beta (regressors).
+This matches the parameter order used by \code{\link{barma}}.
+}
+\examples{
+\dontrun{
+  # Example 1: Fisher Information Matrix for a BAR(1) process
+  set.seed(123)
+  
+  # Simulate a Beta AR(1) process
+  y <- simu_barma(
+    n = 100,
+    alpha = -0.5,
+    varphi = 0.6,
+    phi = 2.5,
+    link = "logit"
+  )
+
+  # Compute Fisher Information Matrix
+  result <- fim_barma(
+    y = y,
+    ar = 1,
+    ma = NA,
+    alpha = -0.5,
+    varphi = 0.6,
+    theta = numeric(0),
+    phi = 2.5,
+    link = "logit"
+  )
+
+  # Extract FIM and check positive definiteness
+  fim <- result$fisher_info_mat
+  eigenvalues <- eigen(fim)$values
+  
+  # All eigenvalues should be positive (positive definite)
+  all(eigenvalues > 0)
+
+  # Get standard errors from inverse of FIM
+  vcov_mat <- solve(fim)
+  standard_errors <- sqrt(diag(vcov_mat))
+  standard_errors
+
+  # Example 2: Fisher Information for BARMA(1,1) with regressors
+  set.seed(456)
+  
+  # Simulate BARMA(2,1) data
+  y <- simu_barma(
+    n = 150,
+    alpha = -0.2,
+    varphi = c(0.5, 0.3),
+    theta = 0.2,
+    phi = 3.0,
+    link = "logit"
+  )
+  
+  # Create external regressors
+  X <- matrix(rnorm(150), nrow = 150, ncol = 1)
+  
+  # Compute Fisher Information Matrix with regressors
+  result <- fim_barma(
+    y = y,
+    ar = c(1, 2),
+    ma = 1,
+    alpha = -0.2,
+    varphi = c(0.5, 0.3),
+    theta = 0.2,
+    phi = 3.0,
+    link = "logit",
+    xreg = X,
+    beta = 0.2
+  )
+
+  # Check fitted values
+  fitted_values <- result$fitted_ts
+  
+  # Plot observed vs fitted
+  # plot(y, type = "l", main = "Observed vs Fitted", ylab = "Value")
+  # lines(fitted_values, col = "red", lwd = 2)
+
+  # Example 3: Standard errors from Fisher Information Matrix
+  set.seed(789)
+  
+  # Simulate BARMA(1,1) process
+  y <- simu_barma(
+    n = 100,
+    alpha = -0.5,
+    varphi = 0.6,
+    theta = 0.3,
+    phi = 2.5,
+    link = "logit"
+  )
+
+  # Compute FIM for BARMA(1,1) model
+  result <- fim_barma(
+    y = y,
+    ar = 1,
+    ma = 1,
+    alpha = -0.5,
+    varphi = 0.6,
+    theta = 0.3,
+    phi = 2.5,
+    link = "logit"
+  )
+
+  # Get variance-covariance matrix
+  vcov <- solve(result$fisher_info_mat)
+  
+  # Extract standard errors (sqrt of diagonal)
+  se <- sqrt(diag(vcov))
+  
+  # Create confidence intervals (approximate)
+  # Lower CI = estimate - 1.96 * SE
+  # Upper CI = estimate + 1.96 * SE
+  params <- c(-0.5, 0.6, 0.3, 2.5)
+  ci_lower <- params - 1.96 * se
+  ci_upper <- params + 1.96 * se
+}
+
+}
+\references{
+Rocha, A.V., & Cribari-Neto, F. (2009). Beta autoregressive moving
+average models. \emph{TEST}, 18(3), 529-545.
+\doi{10.1007/s11749-008-0112-z}
+
+Rocha, A.V., & Cribari-Neto, F. (2017). Erratum to: Beta autoregressive
+moving average models. \emph{TEST}, 26, 451-459.
+\doi{10.1007/s11749-017-0528-4}
+}
+\seealso{
+\code{\link{barma}} for model fitting,
+\code{\link{loglik_barma}} for log-likelihood computation,
+\code{\link{score_vector_barma}} for score vector (gradient)
+}

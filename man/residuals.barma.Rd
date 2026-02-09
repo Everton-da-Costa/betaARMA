@@ -22,7 +22,7 @@ A numeric vector or `ts` object containing the requested residuals.
 }
 \description{
 Computes various types of residuals for a fitted Beta Autoregressive Moving 
-Average (βARMA) model object of class `"barma"`.
+Average (BARMA) model object of class `"barma"`.
 }
 \details{
 This function is an S3 method for the generic `residuals` function, 

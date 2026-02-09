@@ -2,7 +2,7 @@
 % Please edit documentation in R/start_values.R
 \name{start_values}
 \alias{start_values}
-\title{Generate Initial Values for βARMA Model Estimation}
+\title{Generate Initial Values for BARMA Model Estimation}
 \usage{
 start_values(y, link, ar = NA, ma = NA, X = NA)
 }
@@ -29,7 +29,7 @@ specification is not recognized.
 }
 \description{
 This function calculates reasonable starting values for the parameters of
-various Beta Autoregressive Moving Average (βARMA) models. The method is
+various Beta Autoregressive Moving Average (BARMA) models. The method is
 based on the approach proposed by Ferrari & Cribari-Neto (2004) for
 beta regression, adapted here for the time series context.
 }
@@ -51,7 +51,7 @@ The specific procedure depends on the model's structure:
   \item The initial value for the precision parameter `phi` is derived
     from the variance of the residuals of the initial linear fit,
     following the methodology from Ferrari & Cribari-Neto (2004).
-  \item For a pure βMA model (no AR or X components), a simpler method is
+  \item For a pure BMA model (no AR or X components), a simpler method is
     used where `alpha` is the mean of `g(y)` and `phi` is based on the
     unconditional variance of `y`.
 }
@@ -69,4 +69,3 @@ Original code by Fabio M. Bayer (bayer@ufsm.br).
 Substantially modified and improved by Everton da Costa
 (everto.cost@gmail.com).
 }
-\keyword{external}

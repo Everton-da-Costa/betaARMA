@@ -4,7 +4,18 @@
 \alias{score_vector_barma}
 \title{Score Vector for a BARMA Model (Internal Version)}
 \usage{
-score_vector_barma(y, ar, ma, alpha, varphi, theta, phi, link)
+score_vector_barma(
+  y,
+  ar,
+  ma,
+  alpha,
+  varphi,
+  theta,
+  phi,
+  link,
+  xreg = NULL,
+  beta = NULL
+)
 }
 \arguments{
 \item{y}{A numeric vector representing the time series data, with values in
@@ -27,6 +38,10 @@ Use numeric(0) or empty vector if no MA component.}
 \item{phi}{The precision parameter of the BARMA model (must be positive).}
 
 \item{link}{A character string for the link function (e.g., "logit").}
+
+\item{xreg}{A matrix or data frame of static regressors (optional).}
+
+\item{beta}{A numeric vector of regression coefficients (optional).}
 }
 \value{
 A numeric vector representing the score for each parameter.

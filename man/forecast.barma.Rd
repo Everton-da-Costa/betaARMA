@@ -4,27 +4,30 @@
 \alias{forecast.barma}
 \title{Forecast a barma Model}
 \usage{
-\method{forecast}{barma}(object, h = 6, ...)
+\method{forecast}{barma}(object, h = 6, xreg = NULL, ...)
 }
 \arguments{
-\item{object}{A fitted model object of class `"barma"`.}
+\item{object}{A fitted model object of class `barma`. Must contain
+`object$xreg` if regressors were used.}
 
 \item{h}{The number of steps to forecast ahead (forecast horizon).
 Default is 6.}
 
+\item{xreg}{A matrix of future regressor values for the forecast horizon.
+Should have h rows and the same number of columns as xreg used in model
+fitting.}
+
 \item{...}{Additional arguments (currently ignored).}
 }
 \value{
-A `ts` object containing the point forecasts for $h$ steps ahead.
+A `ts` object containing the point forecasts for h steps ahead.
 }
 \description{
-S3 method for producing forecasts from a fitted `"barma"` model object.
+S3 method for producing forecasts from a fitted `barma` model object.
 }
 \details{
-This function computes dynamic, multi-step-ahead point forecasts, where 
-future predictor-scale errors are assumed to be zero.
-
-The autoregressive part of the forecast uses the conditional expectation
-\eqn{E[g(y_t) | F_{t-1}] = \eta_t}, so future \eqn{g(y)} values are 
-replaced by their forecasted \eqn{\eta_t} values.
+This function computes dynamic, multi-step-ahead point forecasts.
+It implements a "Regression with ARMA errors" logic, where the AR components
+are applied to the deviations from the regression line:
+\eqn{AR(g(y_{t-k}) - x_{t-k}^\top \beta)}.
 }

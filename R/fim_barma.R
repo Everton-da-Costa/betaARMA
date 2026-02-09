@@ -32,7 +32,7 @@
 #' See References section for details.
 #'
 #' **Parameter Order**: Parameters should be supplied in the order:
-#' Alpha, Varphi (AR), Theta (MA), Phi, Beta (regressors).
+#' alpha, varphi (AR), theta (MA), phi, beta (regressors).
 #' This matches the parameter order used by \code{\link{barma}}.
 #'
 #' @param y
@@ -324,14 +324,14 @@ fim_barma <- function(
     
     # Part B: Compute Recursive Derivatives ---
     
-    # 1. Derivative w.r.t. Alpha
+    # 1. Derivative w.r.t. alpha
     d_eta_d_alpha[t] <- 1
     if (has_ma) {
       ma_adj <- drop(crossprod(theta, d_eta_d_alpha[t - ma_lags]))
       d_eta_d_alpha[t] <- 1 - ma_adj
     }
     
-    # 2. Derivative w.r.t. AR (Varphi)
+    # 2. Derivative w.r.t. AR (varphi)
     if (has_ar) {
       d_eta_d_varphi[t, ] <- y_transformed[t - ar_lags] - xb[t - ar_lags]
       if (has_ma) {
@@ -342,7 +342,7 @@ fim_barma <- function(
       }
     }
     
-    # 3. Derivative w.r.t. MA (Theta)
+    # 3. Derivative w.r.t. MA (theta)
     if (has_ma) {
       d_eta_d_theta[t, ] <- error[t - ma_lags]
       ma_adj <- drop(
@@ -351,7 +351,7 @@ fim_barma <- function(
       d_eta_d_theta[t, ] <- d_eta_d_theta[t, ] - ma_adj
     }
     
-    # 4. Derivative w.r.t. Beta (Regressors)
+    # 4. Derivative w.r.t. beta (Regressors)
     if (has_xreg) {
       base_grad <- xreg[t, ]
       if (has_ar) {
