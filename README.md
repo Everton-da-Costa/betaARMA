@@ -105,7 +105,7 @@ if (!require("remotes")) {
 Then, install the package:
 
 ```R
-remotes::install_github("everton-da-costa/betaARMA", 
+remotes::install_github("Everton-da-Costa/betaARMA", 
                         dependencies = TRUE)
 ```
 
@@ -146,7 +146,7 @@ If you use this package in your research, please cite it as follows:
   author = {Everton da Costa, Francisco Cribari-Neto and Vinícius T. Scher},
   year = {2026},
   note = {R package version 1.0.0},
-  url = {[https://github.com/everton-da-costa/betaARMA](https://github.com/everton-da-costa/betaARMA)},
+  url = {[https://github.com/Everton-da-Costa/betaARMA](https://github.com/Everton-da-Costa/betaARMA)},
 }
 ```
 
