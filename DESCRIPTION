@@ -14,7 +14,7 @@ Authors@R: c(
          comment = c(ORCID = "0000-0002-5909-6698", "Theoretical foundations")),
   person(given = "Vinicius",
          family = "Scher",
-         role = "aut",
+         role = "ctb",
          comment = c(ORCID = "0000-0003-0406-0265"))
   )
 Description: Fits Beta Autoregressive Moving Average (BARMA) models for time series data distributed in the standard unit interval (0, 1). The estimation is performed via the conditional maximum likelihood method using the BFGS algorithm. The package includes tools for model fitting, diagnostic checking, and forecasting. Based on the work of Rocha and Cribari-Neto (2009) <doi:10.1007/s11749-008-0112-z> and the associated erratum Rocha and Cribari-Neto (2017) <doi:10.1007/s11749-017-0528-4>. The original code was developed by Fabio M. Bayer.
