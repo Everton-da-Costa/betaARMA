@@ -48,7 +48,7 @@
 #'
 #' @author
 #' Everton da Costa (Federal University of Pernambuco, 
-#' \email{everton.ecosta@ufpe.br});
+#' \email{everto.cost@gmail.com});
 #' Francisco Cribari-Neto (Federal University of Pernambuco, 
 #' \email{francisco.cribari@ufpe.br})
 #'
@@ -124,44 +124,55 @@
 #' \code{\link{fim_barma}} for Fisher Information Matrix
 #'
 #' @examples
-#' \dontrun{
+#' \donttest{
 #'   # Example 1: Fit a BAR(1) model
-#'   set.seed(123)
-#'   y <- simu_barma(
-#'     n = 100,
-#'     alpha = -0.5,
+#'   set.seed(2025)
+#'   y_sim_bar <- simu_barma(
+#'     n = 250,
+#'     alpha = 0.0,
 #'     varphi = 0.6,
 #'     phi = 25.0,
-#'     link = "logit"
+#'     link = "logit",
+#'     freq = 12
 #'   )
 #'
 #'   # Fit the model
-#'   fit <- barma(y, ar = 1, link = "logit")
+#'   fit_bar <- barma(y_sim_bar, ar = 1, link = "logit")
 #'
 #'   # View results
-#'   summary(fit)
-#'   coef(fit)
+#'   summary(fit_bar)
+#'   coef(fit_bar)
 #'
 #'   # Example 2: Fit a BARMA(1,1) model
-#'   y_arma <- simu_barma(
-#'     n = 100,
-#'     alpha = -0.5,
+#'   set.seed(2025)
+#'   y_sim_barma <- simu_barma(
+#'     n = 250,
+#'     alpha = 0.0,
 #'     varphi = 0.6,
 #'     theta = 0.3,
 #'     phi = 25.0,
-#'     link = "logit"
+#'     link = "logit",
+#'     freq = 12
 #'   )
 #'
 #'   # Fit ARMA structure
-#'   fit_arma <- barma(y_arma, ar = 1, ma = 1, link = "logit")
-#'   summary(fit_arma)
+#'   fit_barma <- barma(y_sim_barma, ar = 1, ma = 1, link = "logit")
+#'   summary(fit_barma)
 #'
-#'   # Example 3: Model with external regressors
-#'   X <- matrix(rnorm(100), nrow = 100, ncol = 1)
-#'   colnames(X) <- "X1"
+#'   # Example 3: BARMA(1,1) model with harmonic seasonal regressors
+#'   hs <- sin(2 * pi * seq_along(y_sim_barma) / 12)
+#'   hc <- cos(2 * pi * seq_along(y_sim_barma) / 12)
 #'
-#'   fit_xreg <- barma(y, ar = 1, link = "logit", xreg = X)
-#'   summary(fit_xreg)
+#'   # Create regressor matrix
+#'   X <- cbind(hs = hs,
+#'              hc = hc)
+#'
+#'   fit_barma_xreg <- barma(
+#'     y_sim_barma,
+#'     ar = 1, ma = 1,
+#'     link = "logit", xreg = X
+#'   )
+#'   summary(fit_barma_xreg)
 #' }
 #'
 #' @importFrom stats is.ts optim dbeta frequency pnorm start ts
@@ -297,11 +308,11 @@ barma <- function(
   # --------------------------------------------------------------------------
   
   # Parameter order (matching start_values order):
-  # 1. Alpha (intercept)
+  # 1. alpha (intercept)
   # 2. AR parameters (if present)
   # 3. MA parameters (if present)
-  # 4. Phi (precision parameter)
-  # 5. Beta (regression coefficients, if present)
+  # 4. phi (precision parameter)
+  # 5. beta (regression coefficients, if present)
   
   idx_alpha <- 1
   

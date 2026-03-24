@@ -1,25 +1,33 @@
-#' @title Score Vector for a BARMA Model (Internal Version)
-#' @description This function computes the score vector (the gradient of the
-#'   log-likelihood) for the BARMA model. It is designed to be called with
-#'   named parameters, making it easy to test and debug.
+#' @title Score Vector for the BARMA Model
+#' @description Computes the score vector (gradient of the log-likelihood)
+#'   for the Beta Autoregressive Moving Average (BARMA) model at a given
+#'   parameter vector. Used internally by \code{\link{barma}} during
+#'   optimization via the BFGS algorithm.
 #'
-#' @param y A numeric vector representing the time series data, with values in
-#'   (0, 1).
+#' @param y A time series object (\code{ts}) with values strictly in (0, 1).
 #' @param ar A numeric vector specifying the autoregressive (AR) lags.
-#'   Can be NA or NULL if no AR component.
+#'   Use \code{NA} or \code{NULL} if no AR component.
 #' @param ma A numeric vector specifying the moving average (MA) lags.
-#'   Can be NA or NULL if no MA component.
-#' @param alpha The intercept term.
-#' @param varphi A numeric vector of autoregressive (AR) parameters.
-#'   Use numeric(0) or empty vector if no AR component.
-#' @param theta A numeric vector of moving average (MA) parameters.
-#'   Use numeric(0) or empty vector if no MA component.
-#' @param phi The precision parameter of the BARMA model (must be positive).
-#' @param link A character string for the link function (e.g., "logit").
-#' @param xreg A matrix or data frame of static regressors (optional).
-#' @param beta A numeric vector of regression coefficients (optional).
+#'   Use \code{NA} or \code{NULL} if no MA component.
+#' @param alpha The intercept parameter.
+#' @param varphi A numeric vector of AR parameters.
+#'   Use \code{numeric(0)} if no AR component.
+#' @param theta A numeric vector of MA parameters.
+#'   Use \code{numeric(0)} if no MA component.
+#' @param phi The precision parameter (must be positive).
+#' @param link A character string specifying the link function.
+#'   One of \code{"logit"}, \code{"probit"}, \code{"cloglog"},
+#'   or \code{"loglog"}.
+#' @param xreg An optional matrix of external regressors.
+#' @param beta An optional numeric vector of regression coefficients
+#'   corresponding to \code{xreg}.
 #'
-#' @return A numeric vector representing the score for each parameter.
+#' @return A numeric vector of the same length as the parameter vector,
+#'   giving the partial derivatives of the log-likelihood with respect
+#'   to each parameter.
+#'
+#' @seealso \code{\link{barma}}, \code{\link{loglik_barma}},
+#'   \code{\link{fim_barma}}
 #'
 #' @keywords internal
 score_vector_barma <- function(y, ar, ma, alpha, varphi, theta, phi, link,

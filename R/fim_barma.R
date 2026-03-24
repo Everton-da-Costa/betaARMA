@@ -106,117 +106,61 @@
 #' \code{\link{score_vector_barma}} for score vector (gradient)
 #'
 #' @examples
-#' \dontrun{
-#'   # Example 1: Fisher Information Matrix for a BAR(1) process
-#'   set.seed(123)
-#'   
-#'   # Simulate a Beta AR(1) process
-#'   y <- simu_barma(
-#'     n = 100,
-#'     alpha = -0.5,
+#' \donttest{
+#'   # Example 1: Fisher Information Matrix for a BAR(1) model
+#'   set.seed(2025)
+#'   y_sim_bar <- simu_barma(
+#'     n = 250,
+#'     alpha = 0.0,
 #'     varphi = 0.6,
-#'     phi = 2.5,
-#'     link = "logit"
+#'     phi = 25.0,
+#'     link = "logit",
+#'     freq = 12
 #'   )
 #'
-#'   # Compute Fisher Information Matrix
-#'   result <- fim_barma(
-#'     y = y,
+#'   result_bar <- fim_barma(
+#'     y = y_sim_bar,
 #'     ar = 1,
 #'     ma = NA,
-#'     alpha = -0.5,
+#'     alpha = 0.0,
 #'     varphi = 0.6,
 #'     theta = numeric(0),
-#'     phi = 2.5,
+#'     phi = 25.0,
 #'     link = "logit"
 #'   )
 #'
-#'   # Extract FIM and check positive definiteness
-#'   fim <- result$fisher_info_mat
-#'   eigenvalues <- eigen(fim)$values
-#'   
-#'   # All eigenvalues should be positive (positive definite)
-#'   all(eigenvalues > 0)
+#'   # Check positive definiteness
+#'   fim <- result_bar$fisher_info_mat
+#'   all(eigen(fim)$values > 0)
 #'
-#'   # Get standard errors from inverse of FIM
-#'   vcov_mat <- solve(fim)
-#'   standard_errors <- sqrt(diag(vcov_mat))
-#'   standard_errors
+#'   # Standard errors from inverse of FIM
+#'   sqrt(diag(solve(fim)))
 #'
-#'   # Example 2: Fisher Information for BARMA(1,1) with regressors
-#'   set.seed(456)
-#'   
-#'   # Simulate BARMA(2,1) data
-#'   y <- simu_barma(
-#'     n = 150,
-#'     alpha = -0.2,
-#'     varphi = c(0.5, 0.3),
-#'     theta = 0.2,
-#'     phi = 3.0,
-#'     link = "logit"
-#'   )
-#'   
-#'   # Create external regressors
-#'   X <- matrix(rnorm(150), nrow = 150, ncol = 1)
-#'   
-#'   # Compute Fisher Information Matrix with regressors
-#'   result <- fim_barma(
-#'     y = y,
-#'     ar = c(1, 2),
-#'     ma = 1,
-#'     alpha = -0.2,
-#'     varphi = c(0.5, 0.3),
-#'     theta = 0.2,
-#'     phi = 3.0,
-#'     link = "logit",
-#'     xreg = X,
-#'     beta = 0.2
-#'   )
-#'
-#'   # Check fitted values
-#'   fitted_values <- result$fitted_ts
-#'   
-#'   # Plot observed vs fitted
-#'   # plot(y, type = "l", main = "Observed vs Fitted", ylab = "Value")
-#'   # lines(fitted_values, col = "red", lwd = 2)
-#'
-#'   # Example 3: Standard errors from Fisher Information Matrix
-#'   set.seed(789)
-#'   
-#'   # Simulate BARMA(1,1) process
-#'   y <- simu_barma(
-#'     n = 100,
-#'     alpha = -0.5,
+#'   # Example 2: Fisher Information Matrix for a BARMA(1,1) model
+#'   set.seed(2025)
+#'   y_sim_barma <- simu_barma(
+#'     n = 250,
+#'     alpha = 0.0,
 #'     varphi = 0.6,
 #'     theta = 0.3,
-#'     phi = 2.5,
-#'     link = "logit"
+#'     phi = 25.0,
+#'     link = "logit",
+#'     freq = 12
 #'   )
 #'
-#'   # Compute FIM for BARMA(1,1) model
-#'   result <- fim_barma(
-#'     y = y,
+#'   result_barma <- fim_barma(
+#'     y = y_sim_barma,
 #'     ar = 1,
 #'     ma = 1,
-#'     alpha = -0.5,
+#'     alpha = 0.0,
 #'     varphi = 0.6,
 #'     theta = 0.3,
-#'     phi = 2.5,
+#'     phi = 25.0,
 #'     link = "logit"
 #'   )
 #'
-#'   # Get variance-covariance matrix
-#'   vcov <- solve(result$fisher_info_mat)
-#'   
-#'   # Extract standard errors (sqrt of diagonal)
-#'   se <- sqrt(diag(vcov))
-#'   
-#'   # Create confidence intervals (approximate)
-#'   # Lower CI = estimate - 1.96 * SE
-#'   # Upper CI = estimate + 1.96 * SE
-#'   params <- c(-0.5, 0.6, 0.3, 2.5)
-#'   ci_lower <- params - 1.96 * se
-#'   ci_upper <- params + 1.96 * se
+#'   # Standard errors
+#'   sqrt(diag(solve(result_barma$fisher_info_mat)))
 #' }
 #'
 #' @export

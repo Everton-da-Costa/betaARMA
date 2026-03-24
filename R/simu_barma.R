@@ -41,20 +41,21 @@
 #'
 #' @examples
 #' # Set seed for reproducibility
-#' set.seed(42)
-#'
 #' # --- Example 1: Simulate a BAR(1) process ---
 #' # y_t depends on y_{t-1}
+#' set.seed(2025)
 #' bar1_series <- simu_barma(n = 250, alpha = 0.0, varphi = 0.5, phi = 20,
 #' link = "logit")
 #' plot(bar1_series, main = "Simulated BAR(1) Process", ylab = "Value")
 #'
 #' # --- Example 2: Simulate a BMA(1) process ---
 #' # y_t depends on the previous error term
+#' set.seed(2025)
 #' bma1_series <- simu_barma(n = 250, alpha = 0.0, theta = -0.2, phi = 20)
 #' plot(bma1_series, main = "Simulated BMA(1) Process", ylab = "Value")
 #'
 #' # --- Example 3: Simulate a BARMA(2,1) process with a cloglog link ---
+#' set.seed(2025)
 #' barma21_series <- simu_barma(
 #'   n = 200,
 #'   alpha = 0.0,
