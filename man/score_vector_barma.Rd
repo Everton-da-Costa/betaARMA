@@ -2,7 +2,7 @@
 % Please edit documentation in R/score_vector_barma.R
 \name{score_vector_barma}
 \alias{score_vector_barma}
-\title{Score Vector for a BARMA Model (Internal Version)}
+\title{Score Vector for the BARMA Model}
 \usage{
 score_vector_barma(
   y,
@@ -18,37 +18,46 @@ score_vector_barma(
 )
 }
 \arguments{
-\item{y}{A numeric vector representing the time series data, with values in
-(0, 1).}
+\item{y}{A time series object (\code{ts}) with values strictly in (0, 1).}
 
 \item{ar}{A numeric vector specifying the autoregressive (AR) lags.
-Can be NA or NULL if no AR component.}
+Use \code{NA} or \code{NULL} if no AR component.}
 
 \item{ma}{A numeric vector specifying the moving average (MA) lags.
-Can be NA or NULL if no MA component.}
+Use \code{NA} or \code{NULL} if no MA component.}
 
-\item{alpha}{The intercept term.}
+\item{alpha}{The intercept parameter.}
 
-\item{varphi}{A numeric vector of autoregressive (AR) parameters.
-Use numeric(0) or empty vector if no AR component.}
+\item{varphi}{A numeric vector of AR parameters.
+Use \code{numeric(0)} if no AR component.}
 
-\item{theta}{A numeric vector of moving average (MA) parameters.
-Use numeric(0) or empty vector if no MA component.}
+\item{theta}{A numeric vector of MA parameters.
+Use \code{numeric(0)} if no MA component.}
 
-\item{phi}{The precision parameter of the BARMA model (must be positive).}
+\item{phi}{The precision parameter (must be positive).}
 
-\item{link}{A character string for the link function (e.g., "logit").}
+\item{link}{A character string specifying the link function.
+One of \code{"logit"}, \code{"probit"}, \code{"cloglog"},
+or \code{"loglog"}.}
 
-\item{xreg}{A matrix or data frame of static regressors (optional).}
+\item{xreg}{An optional matrix of external regressors.}
 
-\item{beta}{A numeric vector of regression coefficients (optional).}
+\item{beta}{An optional numeric vector of regression coefficients
+corresponding to \code{xreg}.}
 }
 \value{
-A numeric vector representing the score for each parameter.
+A numeric vector of the same length as the parameter vector,
+  giving the partial derivatives of the log-likelihood with respect
+  to each parameter.
 }
 \description{
-This function computes the score vector (the gradient of the
-  log-likelihood) for the BARMA model. It is designed to be called with
-  named parameters, making it easy to test and debug.
+Computes the score vector (gradient of the log-likelihood)
+  for the Beta Autoregressive Moving Average (BARMA) model at a given
+  parameter vector. Used internally by \code{\link{barma}} during
+  optimization via the BFGS algorithm.
+}
+\seealso{
+\code{\link{barma}}, \code{\link{loglik_barma}},
+  \code{\link{fim_barma}}
 }
 \keyword{internal}

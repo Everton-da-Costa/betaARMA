@@ -94,80 +94,52 @@ alpha, varphi (AR), theta (MA), phi, beta (regressors).
 This matches the parameter order used by \code{\link{barma}}.
 }
 \examples{
-\dontrun{
-  # Example 1: Simulate a BAR(1) process and compute log-likelihood
-  # Simulate data from a BARMA(1,0) model [i.e., BAR(1)]
-  set.seed(123)
-  y <- simu_barma(
-    n = 100,
-    alpha = -0.5,
+\donttest{
+  # Example 1: Log-likelihood for a BAR(1) model
+  set.seed(2025)
+  y_sim_bar <- simu_barma(
+    n = 250,
+    alpha = 0.0,
     varphi = 0.6,
     phi = 25.0,
-    link = "logit"
+    link = "logit",
+    freq = 12
   )
 
-  # Compute log-likelihood using the true parameters
   loglik_barma(
-    y = y,
+    y = y_sim_bar,
     ar = 1,
     ma = NA,
-    alpha = -0.5,
+    alpha = 0.0,
     varphi = 0.6,
     theta = numeric(0),
     phi = 25.0,
     link = "logit"
   )
 
-  # Example 2: Simulate a BARMA(1,1) process
-  # Simulate data from a BARMA(1,1) model
-  y <- simu_barma(
-    n = 100,
-    alpha = -0.5,
+  # Example 2: Log-likelihood for a BARMA(1,1) model
+  set.seed(2025)
+  y_sim_barma <- simu_barma(
+    n = 250,
+    alpha = 0.0,
     varphi = 0.6,
     theta = 0.3,
     phi = 25.0,
-    link = "logit"
+    link = "logit",
+    freq = 12
   )
 
-  # Compute log-likelihood for ARMA(1,1) structure
   loglik_barma(
-    y = y,
+    y = y_sim_barma,
     ar = 1,
     ma = 1,
-    alpha = -0.5,
+    alpha = 0.0,
     varphi = 0.6,
     theta = 0.3,
     phi = 25.0,
     link = "logit"
   )
 
-  # Example 3: With external regressors
-  # Simulate BARMA(1,0) with regressors
-  set.seed(456)
-  y <- simu_barma(
-    n = 100,
-    alpha = -0.3,
-    varphi = 0.5,
-    phi = 20.0,
-    link = "logit"
-  )
-
-  # Create external regressors
-  X <- matrix(rnorm(100), nrow = 100, ncol = 1)
-
-  # Compute log-likelihood with regressors
-  loglik_barma(
-    y = y,
-    ar = 1,
-    ma = NA,
-    alpha = -0.3,
-    varphi = 0.5,
-    theta = numeric(0),
-    phi = 20.0,
-    link = "logit",
-    xreg = X,
-    beta = 0.2
-  )
 }
 
 }
