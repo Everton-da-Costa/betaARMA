@@ -10,6 +10,13 @@ This repository contains the R package **`betaARMA`**, a comprehensive toolkit f
 
 ---
 
+## What's New in v1.1.0
+* **Advanced Internals Exported:** The core mathematical functions (`loglik_barma()`, `score_vector_barma()`, and `fim_barma()`) are now exported, allowing researchers and advanced users to build custom extensions or extract gradients directly.
+* **Unified Parameter Architecture:** The underlying codebase has been heavily refactored for performance and stability. All functions now strictly adhere to the unified parameter vector order: `(alpha, varphi, theta, beta, phi)`.
+* **Link Function Fixes:** Fixed a bug in the score vector derivation to ensure mathematically accurate inference for all non-logit models (`cloglog`, `loglog`, and `probit`).
+
+---
+
 ## Table of Contents
 
 - [Project Motivation](#-project-motivation)
