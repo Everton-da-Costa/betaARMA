@@ -49,17 +49,18 @@ This project aims to fill that gap, serving as a go-to resource for hydrologists
 
 ## Foundational Literature
 
-This package implements the methodology established in the following key publications. The original code foundation was developed by Fabio M. Bayer and has been substantially optimized and refactored for this package.
+The foundational methodology implemented in this package was published in **TEST**, a highly respected journal in the fields of Statistics and Probability. The journal's standing speaks to the academic rigor of the underlying statistical models, as reflected in its key metrics:
 
-* **Rocha, A. V., & Cribari-Neto, F. (2009).** "Beta autoregressive moving average models." *TEST*, 18(3), 529-545. [doi:10.1007/s11749-008-0112-z](https://doi.org/10.1007/s11749-008-0112-z)
-* **Rocha, A. V., & Cribari-Neto, F. (2017).** "Erratum to: Beta autoregressive moving average models." *TEST*, 26(2), 451-459. [doi:10.1007/s11749-017-0528-4](https://doi.org/10.1007/s11749-017-0528-4)
-
-### Journal Quality Metrics (TEST)
+* **Impact Factor:** 1.2
+* **CiteScore:** 2.2
+* **SJR:** 0.622
+* **H-Index:** 54
 
 [![SCImago Journal & Country Rank](https://www.scimagojr.com/journal_img.php?id=14882)](https://www.scimagojr.com/journalsearch.php?q=14882&tip=sid)
 
-* **SJR (2024):** 0.505 (Q2)
-* **H-Index:** 52
+**Key Publications:**
+* **Rocha, A. V., & Cribari-Neto, F. (2009).** "Beta autoregressive moving average models." *TEST*, 18(3), 529-545. [doi:10.1007/s11749-008-0112-z](https://doi.org/10.1007/s11749-008-0112-z)
+* **Rocha, A. V., & Cribari-Neto, F. (2017).** "Erratum to: Beta autoregressive moving average models." *TEST*, 26(2), 451-459. [doi:10.1007/s11749-017-0528-4](https://doi.org/10.1007/s11749-017-0528-4)
 
 ---
 
