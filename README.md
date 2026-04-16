@@ -1,10 +1,10 @@
 # betaARMA: Beta Autoregressive Moving Average Models
 
-[![CRAN status](https://www.r-pkg.org/badges/version/betaARMA)](https://CRAN.R-project.org/package=betaARMA)
-[![CRAN downloads](https://cranlogs.r-pkg.org/badges/betaARMA)](https://CRAN.R-project.org/package=betaARMA)
-[![DOI](https://img.shields.io/badge/DOI-10.32614%2FCRAN.package.betaARMA-blue)](https://doi.org/10.32614/CRAN.package.betaARMA)
-[![R-hub](https://github.com/Everton-da-Costa/betaARMA/actions/workflows/rhub.yaml/badge.svg)](https://github.com/Everton-da-Costa/betaARMA/actions/workflows/rhub.yaml)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![CRAN Status](https://www.r-pkg.org/badges/version/betaARMA)](https://cran.r-project.org/package=betaARMA)
+[![DOI](https://img.shields.io/badge/DOI-10.1016/j.jhydrol.2024.131489-blue.svg)](https://doi.org/10.1016/j.jhydrol.2024.131489)
+[![CRAN Downloads](https://cranlogs.r-pkg.org/badges/grand-total/betaARMA)](https://cran.r-project.org/package=betaARMA)
+[![R-CMD-check](https://github.com/Everton-da-Costa/betaARMA/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/Everton-da-Costa/betaARMA/actions/workflows/R-CMD-check.yaml)
+[![License: GPL-3](https://img.shields.io/badge/License-GPL--3-blue.svg)](https://cran.r-project.org/web/licenses/GPL-3)
 
 This repository contains the R package **`betaARMA`**, a comprehensive toolkit for fitting, forecasting, and simulating Beta Autoregressive Moving Average models. It provides a unified workflow for modeling time series data bounded on the (0, 1) interval, such as rates, proportions, and indices.
 
