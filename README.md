@@ -3,6 +3,7 @@
 [![CRAN status](https://www.r-pkg.org/badges/version/betaARMA)](https://CRAN.R-project.org/package=betaARMA)
 [![DOI](https://img.shields.io/badge/DOI-10.32614%2FCRAN.package.betaARMA-blue)](https://doi.org/10.32614/CRAN.package.betaARMA)
 [![CRAN downloads](https://cranlogs.r-pkg.org/badges/betaARMA)](https://CRAN.R-project.org/package=betaARMA)
+[![R-CMD-check](https://github.com/Everton-da-Costa/betaARMA/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/Everton-da-Costa/betaARMA/actions/workflows/R-CMD-check.yaml)
 [![R-hub](https://github.com/Everton-da-Costa/betaARMA/actions/workflows/rhub.yaml/badge.svg)](https://github.com/Everton-da-Costa/betaARMA/actions/workflows/rhub.yaml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
