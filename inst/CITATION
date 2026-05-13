@@ -1,0 +1,60 @@
+cit_pkg <- bibentry(
+  bibtype = "Manual",
+  title   = "betaARMA: Beta Autoregressive Moving Average Models",
+  author  = c(
+    person("Everton", "da Costa", role = c("aut", "cre"), email = "everto.cost@gmail.com"),
+    person("Francisco", "Cribari-Neto", role = c("ctb", "ths")),
+    person("Vinicius", "Scher", role = "ctb")
+  ),
+  year    = 2026,
+  note    = paste0("R package version ", utils::packageVersion("betaARMA")),
+  url     = "https://github.com/Everton-da-Costa/betaARMA"
+)
+
+cit_bjps <- bibentry(
+  bibtype = "Article",
+  title   = "Numerical stability enhancements in beta autoregressive moving average model estimation",
+  author  = c(
+    person("Francisco", "Cribari-Neto"),
+    person("Everton", "da Costa"),
+    person("R. V.", "Fonseca")
+  ),
+  journal = "Brazilian Journal of Probability and Statistics",
+  year    = 2025,
+  volume  = 39,
+  number  = 4,
+  pages   = "410--437",
+  doi     = "10.1214/25-BJPS645"
+)
+
+cit_jh <- bibentry(
+  bibtype = "Article",
+  title   = "Test inferences and link function selection in dynamic beta modeling of seasonal hydro-environmental time series with temporary abnormal regimes",
+  author  = c(
+    person("Everton", "da Costa"),
+    person("Francisco", "Cribari-Neto"),
+    person("Vinícius T.", "Scher")
+  ),
+  journal = "Journal of Hydrology",
+  year    = 2024,
+  volume  = 635,
+  pages   = "131489",
+  doi     = "10.1016/j.jhydrol.2024.131489"
+)
+
+meta <- list(
+  pkg  = cit_pkg,
+  bjps = cit_bjps,
+  jh   = cit_jh
+)
+
+print.citation <- function(x, ...) {
+  cat("To cite the betaARMA package in publications, please use:\n\n")
+  print(x$pkg, style = "Bibtex")
+  
+  cat("\nTo cite the penalized maximum likelihood estimation (PMLE) methodology, please use:\n\n")
+  print(x$bjps, style = "Bibtex")
+  
+  cat("\nTo cite the application and link function selection methodology, please use:\n\n")
+  print(x$jh, style = "Bibtex")
+}

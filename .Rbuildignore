@@ -8,3 +8,6 @@
 ^CRAN-SUBMISSION$
 ^\.github$
 ^README\.html$
+^\.positai$
+^\.claude$
+^README\.Rmd$

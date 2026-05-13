@@ -1,6 +1,22 @@
+# Standard R & RStudio ignores
 .Rproj.user
 .Rhistory
+.RData
 .Rdata
+.Ruserdata
 .httr-oauth
+
+# Package build artifacts
 *.tar.gz
+*.Rcheck/
+/Meta/
+
+# Ignore local HTML previews (like README.html)
 *.html
+
+# EXCEPTION: Track the documentation HTML files for reproducibility
+!/doc/
+!/doc/*.html
+!/doc/**/*.html
+/doc/
+.positai
