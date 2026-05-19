@@ -183,7 +183,7 @@ descriptive_sub_df <- round(descriptive_sub_df, 2)
 knitr::kable(
   descriptive_sub_df,
   caption = "Descriptive statistics of the monthly relative humidity in
-  Brasília — subsample (February 2006 to August 2020)."
+  Brasília — subsample (February 2006 to July 2019)."
 )
 ```
 
@@ -261,7 +261,7 @@ without further investigation. By applying PCMLE, convergence is achieved
 and the parameter estimates become available for inspection. 
 Furthermore,
 the diagnostic plots below for the PCMLE fit confirm that the residuals exhibit 
-no serial correlation (Scher, Cribari-Neto, Pumi, & Bayer, 2020), 
+no serial correlation (Scher, Cribari-Neto, Pumi, and Bayer, 2020),
 indicating that the lag structure adequately captures 
 the dynamics of the series.
 
