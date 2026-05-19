@@ -6,8 +6,8 @@
 \usage{
 \method{plot}{barma}(
   x,
-  which = c("default", "all", "fitted", "residuals", "acf", "pacf", "ljungbox", "monti",
-    "hist"),
+  which = c("default", "all", "fitted", "tsplot", "acf", "pacf", "ljungbox", "monti",
+    "hist", "qq"),
   residual_type = c("pearson", "quantile", "link", "raw"),
   lag_max = 24,
   title = NULL,
@@ -23,19 +23,25 @@
 \item{which}{A character string controlling which panel(s) to display. One of:
 \describe{
   \item{\code{"default"} (default)}{Four-panel 2\eqn{\times}2 grid:
-    observed vs. fitted (top left), residuals over time (top right),
-    residual ACF (bottom left), and residual PACF (bottom right).}
+    observed vs. fitted (top left), residual ACF (top right),
+    Ljung-Box p-values (bottom left), and residual PACF (bottom right).}
   \item{\code{"all"}}{Six-panel 3\eqn{\times}2 grid:
     observed vs. fitted (top left), residuals over time (top right),
     residual ACF (middle left), residual PACF (middle right),
     Ljung-Box p-values (bottom left), Monti p-values (bottom right).}
   \item{\code{"fitted"}}{Single panel: observed vs. fitted values.}
-  \item{\code{"residuals"}}{Single panel: residuals over time.}
+  \item{\code{"tsplot"}}{Single panel: residuals plotted as a time series,
+    with a horizontal reference line at zero and dashed lines at
+    \eqn{\pm 3} (ad hoc threshold; not shown for \code{"raw"} residuals).}
   \item{\code{"acf"}}{Single panel: residual ACF.}
   \item{\code{"pacf"}}{Single panel: residual PACF.}
   \item{\code{"ljungbox"}}{Single panel: Ljung-Box p-values.}
   \item{\code{"monti"}}{Single panel: Monti test p-values.}
-  \item{\code{"hist"}}{Single panel: residual distribution histogram.}
+  \item{\code{"hist"}}{Single panel: residual distribution histogram with
+    kernel density overlay.}
+  \item{\code{"qq"}}{Single panel: Normal Q-Q plot. Always uses quantile
+    residuals regardless of \code{residual_type}; a message is issued if
+    the type is overridden.}
 }}
 
 \item{residual_type}{Character string passed to \code{\link{residuals.barma}} controlling
@@ -72,8 +78,8 @@ For grid requests (\code{"default"} or \code{"all"}), invisibly returns a
 \description{
 Produces diagnostic plots for a \eqn{\beta}ARMA model fitted by
 \code{\link{barma}}. By default (\code{which = "default"}), four panels are
-displayed in a 2\eqn{\times}2 grid: observed vs. fitted values, residuals
-over time, residual ACF, and residual PACF.
+displayed in a 2\eqn{\times}2 grid: observed vs. fitted values, residual
+ACF, Ljung-Box p-values, and residual PACF.
 }
 \details{
 **Residual type.** All panels (except \emph{Observed vs. Fitted}) use the
@@ -91,12 +97,19 @@ Quantile residuals are approximately \eqn{N(0,1)} under a correctly
 specified model, so \eqn{\pm 3} remains a conservative but reasonable
 threshold for them as well.
 
-**Effective sample size.** Both the Ljung-Box and Monti test statistics 
-rely on the effective sample size \eqn{N_{eff} = n - \max(p, q)} (where 
+**Q-Q plot residuals.** The \code{"qq"} panel always uses quantile
+residuals (Dunn and Smyth, 1996), regardless of \code{residual_type}.
+Quantile residuals are the only type theoretically expected to follow
+\eqn{N(0,1)} under a correctly specified model; using Pearson, raw, or
+link-scale residuals in a normal Q-Q plot would produce misleading results.
+A message is issued when \code{residual_type} is overridden.
+
+**Effective sample size.** Both the Ljung-Box and Monti test statistics
+rely on the effective sample size \eqn{N_{eff} = n - \max(p, q)} (where
 \eqn{\max(p, q)} corresponds to the maximum lag in the model).
 
 **Ljung-Box test.** The p-values are computed from the Ljung-Box test
-statistic. 
+statistic.
 \eqn{Q_{LB}(k) = N_{eff}(N_{eff}+2)\sum_{j=1}^{k}\hat{\rho}_j^2/(N_{eff}-j)},
 where \eqn{\hat{\rho}_j} is the \eqn{j}-th sample autocorrelation of the
 residuals and \eqn{N_{eff} = n - \max(p, q)} is the effective sample size.
@@ -126,14 +139,20 @@ plot(fit)
 # Six-panel diagnostic grid
 plot(fit, which = "all")
 
-# Quantile residuals for normality assessment
-plot(fit, which = "hist", residual_type = "quantile")
+# Single panel: residuals as time series
+plot(fit, which = "tsplot")
 
 # Single panel: Ljung-Box p-values only
 plot(fit, which = "ljungbox")
 
 # Single panel: Monti p-values only
 plot(fit, which = "monti")
+
+# Normal Q-Q plot (always uses quantile residuals)
+plot(fit, which = "qq")
+
+# Histogram with quantile residuals
+plot(fit, which = "hist", residual_type = "quantile")
 
 }
 \references{

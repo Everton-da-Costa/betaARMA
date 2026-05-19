@@ -3,8 +3,8 @@
 #' @description
 #' Produces diagnostic plots for a \eqn{\beta}ARMA model fitted by
 #' \code{\link{barma}}. By default (\code{which = "default"}), four panels are
-#' displayed in a 2\eqn{\times}2 grid: observed vs. fitted values, residuals
-#' over time, residual ACF, and residual PACF.
+#' displayed in a 2\eqn{\times}2 grid: observed vs. fitted values, residual
+#' ACF, Ljung-Box p-values, and residual PACF.
 #'
 #' @param x
 #'   An object of class \code{"barma"}, as returned by \code{\link{barma}}.
@@ -12,19 +12,25 @@
 #'   A character string controlling which panel(s) to display. One of:
 #'   \describe{
 #'     \item{\code{"default"} (default)}{Four-panel 2\eqn{\times}2 grid:
-#'       observed vs. fitted (top left), residuals over time (top right),
-#'       residual ACF (bottom left), and residual PACF (bottom right).}
+#'       observed vs. fitted (top left), residual ACF (top right),
+#'       Ljung-Box p-values (bottom left), and residual PACF (bottom right).}
 #'     \item{\code{"all"}}{Six-panel 3\eqn{\times}2 grid:
 #'       observed vs. fitted (top left), residuals over time (top right),
 #'       residual ACF (middle left), residual PACF (middle right),
 #'       Ljung-Box p-values (bottom left), Monti p-values (bottom right).}
 #'     \item{\code{"fitted"}}{Single panel: observed vs. fitted values.}
-#'     \item{\code{"residuals"}}{Single panel: residuals over time.}
+#'     \item{\code{"tsplot"}}{Single panel: residuals plotted as a time series,
+#'       with a horizontal reference line at zero and dashed lines at
+#'       \eqn{\pm 3} (ad hoc threshold; not shown for \code{"raw"} residuals).}
 #'     \item{\code{"acf"}}{Single panel: residual ACF.}
 #'     \item{\code{"pacf"}}{Single panel: residual PACF.}
 #'     \item{\code{"ljungbox"}}{Single panel: Ljung-Box p-values.}
 #'     \item{\code{"monti"}}{Single panel: Monti test p-values.}
-#'     \item{\code{"hist"}}{Single panel: residual distribution histogram.}
+#'     \item{\code{"hist"}}{Single panel: residual distribution histogram with
+#'       kernel density overlay.}
+#'     \item{\code{"qq"}}{Single panel: Normal Q-Q plot. Always uses quantile
+#'       residuals regardless of \code{residual_type}; a message is issued if
+#'       the type is overridden.}
 #'   }
 #' @param residual_type
 #'   Character string passed to \code{\link{residuals.barma}} controlling
@@ -68,12 +74,19 @@
 #' specified model, so \eqn{\pm 3} remains a conservative but reasonable
 #' threshold for them as well.
 #'
-#' **Effective sample size.** Both the Ljung-Box and Monti test statistics 
-#' rely on the effective sample size \eqn{N_{eff} = n - \max(p, q)} (where 
+#' **Q-Q plot residuals.** The \code{"qq"} panel always uses quantile
+#' residuals (Dunn and Smyth, 1996), regardless of \code{residual_type}.
+#' Quantile residuals are the only type theoretically expected to follow
+#' \eqn{N(0,1)} under a correctly specified model; using Pearson, raw, or
+#' link-scale residuals in a normal Q-Q plot would produce misleading results.
+#' A message is issued when \code{residual_type} is overridden.
+#'
+#' **Effective sample size.** Both the Ljung-Box and Monti test statistics
+#' rely on the effective sample size \eqn{N_{eff} = n - \max(p, q)} (where
 #' \eqn{\max(p, q)} corresponds to the maximum lag in the model).
 #'
 #' **Ljung-Box test.** The p-values are computed from the Ljung-Box test
-#' statistic. 
+#' statistic.
 #' \eqn{Q_{LB}(k) = N_{eff}(N_{eff}+2)\sum_{j=1}^{k}\hat{\rho}_j^2/(N_{eff}-j)},
 #' where \eqn{\hat{\rho}_j} is the \eqn{j}-th sample autocorrelation of the
 #' residuals and \eqn{N_{eff} = n - \max(p, q)} is the effective sample size.
@@ -92,7 +105,7 @@
 #' (Monti, 1994; Scher, Cribari-Neto, Pumi, and Bayer (2020)). The first
 #' \eqn{n_{ar} + n_{ma}} lags are set to \code{NA} as the statistic is not
 #' defined for \eqn{k \leq n_{ar} + n_{ma}}.
-#' 
+#'
 #' @return
 #'   For grid requests (\code{"default"} or \code{"all"}), invisibly returns a
 #'   \code{gtable} object produced by \code{gridExtra::arrangeGrob}, which can
@@ -136,8 +149,8 @@
 #' # Six-panel diagnostic grid
 #' plot(fit, which = "all")
 #'
-#' # Quantile residuals for normality assessment
-#' plot(fit, which = "hist", residual_type = "quantile")
+#' # Single panel: residuals as time series
+#' plot(fit, which = "tsplot")
 #'
 #' # Single panel: Ljung-Box p-values only
 #' plot(fit, which = "ljungbox")
@@ -145,21 +158,27 @@
 #' # Single panel: Monti p-values only
 #' plot(fit, which = "monti")
 #'
+#' # Normal Q-Q plot (always uses quantile residuals)
+#' plot(fit, which = "qq")
+#'
+#' # Histogram with quantile residuals
+#' plot(fit, which = "hist", residual_type = "quantile")
+#'
 #' @importFrom forecast ggAcf ggPacf
 #' @importFrom gridExtra arrangeGrob
 #' @importFrom grid grid.draw
 #' @importFrom ggplot2 ggplot aes geom_line geom_hline geom_point
-#'   geom_histogram geom_density scale_colour_manual scale_y_continuous
-#'   scale_x_continuous labs theme_minimal theme element_text
-#'   element_blank after_stat
+#'   geom_histogram geom_density stat_qq stat_qq_line scale_colour_manual
+#'   scale_y_continuous scale_x_continuous labs theme_minimal theme
+#'   element_text element_blank after_stat
 #' @importFrom stats acf pacf time fitted residuals density pchisq
 #' @importFrom rlang .data
 #' @export
 plot.barma <- function(x,
                        which = c(
                          "default", "all", "fitted",
-                         "residuals", "acf", "pacf",
-                         "ljungbox", "monti", "hist"
+                         "tsplot", "acf", "pacf",
+                         "ljungbox", "monti", "hist", "qq"
                        ),
                        residual_type = c("pearson", "quantile", "link", "raw"),
                        lag_max = 24,
@@ -177,6 +196,15 @@ plot.barma <- function(x,
 
   which <- match.arg(which)
   residual_type <- match.arg(residual_type)
+
+  # Q-Q plot requires quantile residuals — override silently with a message
+  if (which == "qq" && residual_type != "quantile") {
+    message(
+      "Note: the Q-Q plot uses quantile residuals regardless of ",
+      "'residual_type'. Switching to residual_type = \"quantile\"."
+    )
+    residual_type <- "quantile"
+  }
 
   # Label used in panel subtitles to make residual type explicit
   resid_label <- switch(residual_type,
@@ -333,7 +361,7 @@ plot.barma <- function(x,
   } else {
     paste0(resid_label, "  |  dashed lines: \u00b13 (ad hoc)")
   }
-  
+
   # 2.2. Build the base plot (without the +/- 3 lines)
   p_resid <- ggplot2::ggplot(
     df,
@@ -357,16 +385,16 @@ plot.barma <- function(x,
       subtitle = resid_subtitle
     ) +
     barma_theme
-  
+
   # 2.3. Conditionally add the dashed reference lines
   if (residual_type != "raw") {
-    p_resid <- p_resid + 
+    p_resid <- p_resid +
       ggplot2::geom_hline(
         yintercept = c(-3, 3), linetype = "dashed",
         colour = "grey40", linewidth = 0.4
       )
   }
-  
+
   # --- Panel 3: Residual ACF ---
   # suppressMessages() silences "Scale for x is already present" warning
   # that arises when overriding the default x scale set by ggAcf internally.
@@ -433,39 +461,101 @@ plot.barma <- function(x,
     ) +
     barma_theme
 
-  # --- Panel 7: Residual distribution histogram ---
-  p_hist <- ggplot2::ggplot(
-    data.frame(residual = y_res_clean),
-    ggplot2::aes(x = .data$residual)
-  ) +
-    ggplot2::geom_histogram(
-      ggplot2::aes(y = ggplot2::after_stat(density)),
-      bins = 20,
-      fill = colour_residual,
-      colour = "white",
-      alpha = 0.8
+  # --- Panel 7: Residual distribution histogram (built on demand) ---
+  needs_hist <- which %in% c("hist")
+  p_hist <- if (needs_hist) {
+    ggplot2::ggplot(
+      data.frame(residual = y_res_clean),
+      ggplot2::aes(x = .data$residual)
     ) +
-    ggplot2::geom_density(linewidth = 0.7, colour = "grey20") +
-    ggplot2::labs(
-      x = resid_label,
-      y = "Density",
-      title = "Residual Distribution",
-      subtitle = resid_label
-    ) +
-    barma_theme
+      ggplot2::geom_histogram(
+        ggplot2::aes(y = ggplot2::after_stat(density)),
+        bins = 20,
+        fill = colour_residual,
+        colour = "white",
+        alpha = 0.8
+      ) +
+      ggplot2::geom_density(linewidth = 0.7, colour = "grey20") +
+      ggplot2::labs(
+        x = resid_label,
+        y = "Density",
+        title = "Residual Distribution",
+        subtitle = resid_label
+      ) +
+      barma_theme
+  } else {
+    NULL
+  }
+
+  # --- Panel 8: Normal Q-Q plot (built on demand; always quantile residuals) ---
+  # Quantile residuals are the only type with a theoretical N(0,1) guarantee
+  # under a correctly specified model (Dunn & Smyth, 1996). Residuals for the
+  # Q-Q plot are therefore always computed with type = "quantile", independent
+  # of the global residual_type chosen by the user.
+  needs_qq <- which %in% c("qq", "all")
+  p_qq <- if (needs_qq) {
+    qq_res <- as.numeric(residuals(x, type = "quantile"))
+    qq_res <- qq_res[!is.na(qq_res)]
+    n_qq <- length(qq_res)
+
+    conf_level <- 0.95
+    p_vals <- (seq_len(n_qq) - 0.5) / n_qq
+    q_theor <- stats::qnorm(p_vals)
+    se <- sqrt(p_vals * (1 - p_vals) / n_qq) / stats::dnorm(q_theor)
+    z_val <- stats::qnorm((1 + conf_level) / 2)
+    mean_qq <- mean(qq_res, na.rm = TRUE)
+    sd_qq <- stats::sd(qq_res, na.rm = TRUE)
+
+    qq_band_df <- data.frame(
+      theoretical = q_theor,
+      ymin = (q_theor - z_val * se) * sd_qq + mean_qq,
+      ymax = (q_theor + z_val * se) * sd_qq + mean_qq
+    )
+
+    ggplot2::ggplot() +
+      ggplot2::geom_ribbon(
+        data = qq_band_df,
+        ggplot2::aes(
+          x = .data$theoretical,
+          ymin = .data$ymin,
+          ymax = .data$ymax
+        ),
+        fill = colour_residual, alpha = 0.2
+      ) +
+      ggplot2::stat_qq(
+        data = data.frame(residual = qq_res),
+        ggplot2::aes(sample = .data$residual),
+        colour = colour_residual, size = 2, alpha = 0.6
+      ) +
+      ggplot2::stat_qq_line(
+        data = data.frame(residual = qq_res),
+        ggplot2::aes(sample = .data$residual),
+        colour = "grey20", linewidth = 0.7
+      ) +
+      ggplot2::labs(
+        x        = "Theoretical Quantiles",
+        y        = "Sample Quantiles",
+        title    = "Normal Q-Q Plot",
+        subtitle = "Quantile residuals"
+      ) +
+      barma_theme
+  } else {
+    NULL
+  }
 
   # --------------------------------------------------------------------------
   # 6. Return single panel if requested
   # --------------------------------------------------------------------------
   if (!(which %in% c("all", "default"))) {
     p_single <- switch(which,
-      fitted    = p_fitted,
-      residuals = p_resid,
-      acf       = p_acf,
-      pacf      = p_pacf,
-      ljungbox  = p_lb,
-      monti     = p_monti,
-      hist      = p_hist
+      fitted   = p_fitted,
+      tsplot   = p_resid,
+      acf      = p_acf,
+      pacf     = p_pacf,
+      ljungbox = p_lb,
+      monti    = p_monti,
+      hist     = p_hist,
+      qq       = p_qq
     )
     print(p_single)
     return(invisible(p_single))
@@ -473,13 +563,13 @@ plot.barma <- function(x,
 
   # --------------------------------------------------------------------------
   # 7. Return "default" (4-panel grid):
-  #    Observed vs. Fitted  |  Residuals over Time
+  #    Observed vs. Fitted  |  Ljung-Box p-values
   #    Residual ACF         |  Residual PACF
   # --------------------------------------------------------------------------
   if (which == "default") {
     g <- gridExtra::arrangeGrob(
       grobs = list(
-        p_fitted, p_resid,
+        p_fitted, p_lb,
         p_acf, p_pacf
       ),
       ncol = 2,
@@ -499,8 +589,8 @@ plot.barma <- function(x,
     g <- gridExtra::arrangeGrob(
       grobs = list(
         p_fitted, p_resid,
-        p_acf, p_pacf,
-        p_lb, p_monti
+        p_acf,    p_pacf,
+        p_lb,     p_monti
       ),
       ncol = 2,
       top = title

@@ -28,7 +28,7 @@ knitr::opts_chunk$set(
 ```
 
 > **Note:** This vignette requires suggested packages. Install them with:
-> `install.packages(c("ggplot2", "gridExtra", "zoo", "forecast", "scales"))`
+> `install.packages(c("ggplot2", "gridExtra", "zoo", "forecast", "scales", "moments"))`
 
 # Introduction
 
@@ -68,8 +68,8 @@ library(forecast)
 library(ggplot2)
 library(gridExtra)
 library(zoo)
-library(dplyr)
 library(scales)
+library(moments)
 ```
 
 ```{r config_plot, echo=FALSE}
@@ -125,7 +125,7 @@ and harmonic regressors.
 y_subsample_ts <- window(
   brasilia_ts,
   start = c(2006, 02),
-  end   = c(2020, 08)
+  end   = c(2019, 07)
 )
 
 y_train <- window(
@@ -135,7 +135,7 @@ y_train <- window(
 
 y_test <- window(
   y_subsample_ts,
-  start = c(2019, 08)
+  start = c(2018, 08)
 )
 ```
 
@@ -265,11 +265,14 @@ no serial correlation (Scher, Cribari-Neto, Pumi, & Bayer, 2020),
 indicating that the lag structure adequately captures 
 the dynamics of the series.
 
-
-
-```{r diagnostics_pcmle, fig.height=7.0, fig.cap="Diagnostic plots for the PCMLE fit: AR=(10,18), MA=(1,11,13). ACF and PACF spikes lie within the confidence bands and portmanteau test p-values indicate no evidence of residual serial correlation."}
+```{r diagnostics_pcmle, fig.height=7.0, fig.cap="Diagnostic plots for the PCMLE fit: AR=(10,18), MA=(1,11,13)."}
 plot(fit_pcmle, which = "all")
 ```
+
+The observed and fitted values track each other closely. All ACF and PACF
+spikes lie within the confidence bands, and both the Ljung-Box and Monti
+p-values remain consistently above 0.05 across all evaluated lags, providing
+no evidence of residual serial correlation.
 
 Upon reviewing the PCMLE summary, we note that the $\theta_{11}$ estimate
 is not statistically significant (p-value = 0.488). This suggests that the
@@ -305,36 +308,58 @@ this parsimonious specification.
 
 ## Residual Diagnostics
 
-A well-specified model should leave only white-noise residuals. The panels
-below examine serial dependence and the overall distribution of the
-residuals.
+The panels below assess whether the fitted model adequately captures the
+dynamics of the Brasília relative humidity series.
 
 ```{r diagnostics_all, fig.height=7.0, fig.cap="Diagnostic plots for the reduced CMLE model AR=(10,18), MA=(1,13)."}
 plot(fit_cmle_reduced, which = "all")
 ```
 
-```{r diagnostics_hist, fig.height=3.5, fig.cap="Residual distribution for the reduced CMLE model."}
-plot(fit_cmle_reduced, which = "hist")
+The observed and fitted values track each other closely throughout the
+sample period. All ACF and PACF spikes lie within the confidence bands,
+and both the Ljung-Box and Monti p-values remain consistently above 0.05
+across all evaluated lags, providing no evidence of residual serial
+correlation.
+
+```{r diagnostics_qq, fig.height=4.0, fig.width=4.5, fig.cap="Normal Q-Q plot of quantile residuals for the reduced CMLE model."}
+plot(fit_cmle_reduced, which = "qq")
 ```
 
-All ACF and PACF spikes lie within the confidence bands, and the Ljung-Box
-and Monti p-values remain consistently above 0.05 across evaluated lags,
-indicating no evidence of residual serial correlation.
+The quantile residuals fall closely along the reference line within the
+95% confidence band, supporting the normality assumption. One observation
+in the upper tail departs slightly from the line but does not indicate
+a systematic departure from the assumed distribution.
 
+The largest residual corresponds to October 2011 (quantile residual = 4.37), 
+a month that marks the climatological transition from the dry to the rainy 
+season in Brasília — the period of highest interannual humidity variability. 
+This observation coincides with the onset of an extreme drought period 
+documented across Brazil from 2011 onward (Cunha et al., 2019). The second 
+largest residual corresponds to January 2015 (−3.44), coinciding with the 
+strong 2015–2016 El Niño event, which suppressed rainfall across central Brazil.
+These isolated departures reflect genuine meteorological anomalies rather than
+systematic model misspecification.
 
 # Forecasting
 
 ```{r forecast_setup}
-n_test  <- length(y_test)
-dates   <- as.Date(as.yearmon(time(y_test)))
-months  <- tools::toTitleCase(format(dates, "%b"))
+# Define the translation dictionary
+month_map <- c(
+  "Jan" = "Jan", "Fev" = "Feb", "Mar" = "Mar", "Abr" = "Apr",
+  "Mai" = "May", "Jun" = "Jun", "Jul" = "Jul", "Ago" = "Aug",
+  "Set" = "Sep", "Out" = "Oct", "Nov" = "Nov", "Dez" = "Dec"
+)
+
+dates     <- as.Date(zoo::as.yearmon(time(y_test)))
+pt_months <- tools::toTitleCase(format(dates, "%b"))
+months    <- unname(month_map[pt_months])
 
 forecasts_df <- data.frame(
   observed = as.numeric(y_test),
   forecast = forecast(fit_cmle_reduced, xreg = X_test, h = n_test)$mean,
   month    = months
-) %>%
-  mutate(time = seq_len(n_test))
+)
+forecasts_df$time <- seq_len(n_test)
 ```
 
 ```{r ggplot_forecast, echo=FALSE}
@@ -388,15 +413,13 @@ knitr::kable(
 This vignette illustrated the practical value of PCMLE as a diagnostic tool
 in $\beta$ARMA modeling, using monthly relative humidity data from Brasília.
 
-Standard CMLE failed to converge for the $\beta\text{ARMA}$ specification 
-with $\text{AR} = (10, 18)$, $\text{MA} = (1, 11, 13)$
-specification. Applying ridge penalization (PCMLE) restored convergence and
+Standard CMLE failed to converge for the $\beta\text{ARMA}$ model with
+$\text{AR} = (10, 18)$, $\text{MA} = (1, 11, 13)$. Applying ridge penalization (PCMLE) restored convergence and
 made the parameter estimates available for inspection. Residual diagnostics
 on the PCMLE fit confirmed that the lag structure adequately captured the
 series dynamics. Inspection of the PCMLE estimates revealed that
-$\theta_{11}$ was not statistically significant, motivating the reduction to
-the parsimonious $\beta\text{ARMA}$ specification with 
-$\text{AR} = (10, 18)$, $\text{MA} = (1, 13)$ specification. The reduced
+$\theta_{11}$ was not statistically significant, motivating the reduction to the parsimonious $\beta\text{ARMA}$ model with
+$\text{AR} = (10, 18)$, $\text{MA} = (1, 13)$. The reduced
 CMLE model converged, passed all residual diagnostics, and produced accurate
 out-of-sample forecasts, with all predictions guaranteed to lie in $(0, 1)$.
 
@@ -410,15 +433,20 @@ Cribari-Neto, Costa, and Fonseca (2025).
 
 # References
 
+Costa, E., Cribari-Neto, F., & Scher, V. T. (2024). Test inferences and link
+function selection in dynamic beta modeling of seasonal hydro-environmental
+time series with temporary abnormal regimes. *Journal of Hydrology*, 638,
+131489. <https://doi.org/10.1016/j.jhydrol.2024.131489>
+
 Cribari-Neto, F., Costa, E., & Fonseca, R. V. (2025). Numerical stability
 enhancements in beta autoregressive moving average model estimation.
 *Brazilian Journal of Probability and Statistics*, 39(4), 410--437.
 <https://doi.org/10.1214/25-BJPS645>
 
-Costa, E., Cribari-Neto, F., & Scher, V. T. (2024). Test inferences and link
-function selection in dynamic beta modeling of seasonal hydro-environmental
-time series with temporary abnormal regimes. *Journal of Hydrology*, 638,
-131489. <https://doi.org/10.1016/j.jhydrol.2024.131489>
+Cunha, A. P. M. A., Zeri, M., Deusdará Leal, K., Costa, L., Cuartas, L. A., 
+Marengo, J. A., ... & Cunningham, C. (2019). Extreme drought events over 
+Brazil from 2011 to 2019. *Atmosphere*, 10(11), 642. 
+<https://doi.org/10.3390/atmos10110642>
 
 Rocha, A. V., & Cribari-Neto, F. (2009). Beta autoregressive moving average
 models. *TEST*, 18(3), 529--545.
@@ -432,6 +460,7 @@ Scher, V. T., Cribari-Neto, F., Pumi, G., & Bayer, F. M. (2020).
 Goodness-of-fit tests for $\beta$ARMA hydrological time series modeling.
 *Environmetrics*, 31(3), e2607.
 <https://doi.org/10.1002/env.2607>
+
 
 
 # Reproducibility
