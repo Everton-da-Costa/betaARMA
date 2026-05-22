@@ -322,7 +322,7 @@ loglik_barma <- function(
   # Transform response using link function
   y_transformed <- linkfun(y)
   
-  # Determine maximum lag for burn-in period
+  # Determine maximum lag
   ar_order <- if (length(ar_lags) > 0) max(ar_lags) else 0
   ma_order <- if (length(ma_lags) > 0) max(ma_lags) else 0
   max_lag  <- max(ar_order, ma_order)
@@ -338,11 +338,11 @@ loglik_barma <- function(
   }
   
   # --------------------------------------------------------------------------
-  # 4. CALCULATE ERROR AND PREDICTOR ITERATIVELY
+  # 4. CALCULATE ERROR AND PREDICTOR
   # --------------------------------------------------------------------------
   
   # Initialize containers for linear predictor and errors
-  # Observations 1:max_lag will have 0/NA values (burn-in period)
+  # Observations 1:max_lag will have 0/NA values
   error <- rep(0, n_obs)
   eta   <- rep(NA_real_, n_obs)
   
@@ -359,7 +359,7 @@ loglik_barma <- function(
   # 5. CALCULATE THE FINAL LOG-LIKELIHOOD
   # --------------------------------------------------------------------------
   
-  # Extract observations used in likelihood (excluding burn-in period)
+  # Extract observations used in likelihood
   idx_effective <- (max_lag + 1):n_obs
   eta_eff <- eta[idx_effective]
   y_eff   <- y[idx_effective]
