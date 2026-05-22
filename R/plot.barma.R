@@ -63,16 +63,16 @@
 #' residuals selected by \code{residual_type}. The residual type is displayed
 #' in each panel subtitle for transparency.
 #'
-#' **Reference lines in the residuals-over-time panel.** The dashed horizontal
-#' lines are drawn at \eqn{\pm 3} as an ad hoc threshold for identifying
-#' atypical observations. No distributional assumption is made; observations
-#' outside these bounds may warrant individual inspection. Note that Pearson
-#' and link-scale residuals do not follow a standard normal distribution, so
-#' normal-distribution-based quantiles (e.g., \eqn{\pm 1.96} or
-#' \eqn{\pm 2.576}) are not appropriate reference values for those types.
-#' Quantile residuals are approximately \eqn{N(0,1)} under a correctly
-#' specified model, so \eqn{\pm 3} remains a conservative but reasonable
-#' threshold for them as well.
+#' **Reference lines in the residuals-over-time panel.** The dashed horizontal 
+#' lines are drawn at \eqn{\pm 3} as an ad hoc threshold for identifying 
+#' atypical observations. No distributional assumption is made; observations 
+#' outside these bounds may warrant individual inspection. Pearson and 
+#' link-scale residuals do not follow a standard normal distribution, so 
+#' normal-distribution-based quantiles (e.g., \eqn{\pm 1.96} or 
+#' \eqn{\pm 2.576}) are not appropriate reference values for such residuals. 
+#' Quantile residuals are approximately distributed as \eqn{N(0,1)} under a 
+#' correctly specified model, so \eqn{\pm 3} is a conservative but reasonable 
+#' threshold for them.
 #'
 #' **Q-Q plot residuals.** The \code{"qq"} panel always uses quantile
 #' residuals (Dunn and Smyth, 1996), regardless of \code{residual_type}.
