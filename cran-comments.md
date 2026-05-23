@@ -1,4 +1,7 @@
 
+## Resubmission
+This is a resubmission. In the previous submission, the auto-check flagged a NOTE regarding the `inst/CITATION` file failing to read. This has been resolved by replacing dynamic package loading calls with the `meta` object to safely extract version data during the feasibility check.
+
 ## Update notes for betaARMA 1.2.0
 This update introduces ridge penalization (PCMLE) via a new `penalty`
 argument in `barma()`, resolving numerical instabilities in challenging
