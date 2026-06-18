@@ -266,7 +266,7 @@ summary(fit_penalized)
 If you use this package in your research, please cite it as follows:
 
 ```bibtex
-@Manual{,
+@Manual{Costa_Cribari_Scher2026,
   title = {betaARMA: Beta Autoregressive Moving Average Models},
   author = {Everton da Costa, Francisco Cribari-Neto and Vinícius T. Scher},
   year = {2026},
@@ -302,8 +302,10 @@ If your application involves hydro-environmental modeling, please consider citin
   author    = {Costa, E. and Cribari-Neto, F. and Scher, V. T.},
   journal   = {Journal of Hydrology},
   year      = {2024},
-  note      = {forthcoming}
-}
+  volume    = {638},
+  pages     = {131489}, 
+  year      = {2024},
+  doi       = {10.1016/j.jhydrol.2024.131489}
 ```
 
 ---
