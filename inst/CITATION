@@ -19,6 +19,7 @@ bibentry(
   year   = year,
   note   = paste("R package version", meta$Version),
   url    = "https://CRAN.R-project.org/package=betaARMA",
+  doi    = "10.32614/CRAN.package.betaARMA",
   header = "To cite the betaARMA package in publications, please use:"
 )
 

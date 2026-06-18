@@ -267,12 +267,12 @@ If you use this package in your research, please cite it as follows:
 
 ```bibtex
 @Manual{Costa_Cribari_Scher2026,
-  title = {betaARMA: Beta Autoregressive Moving Average Models},
-  author = {Everton da Costa, Francisco Cribari-Neto and Vinícius T. Scher},
-  year = {2026},
-  note = {R package version 1.2.0},
-  doi = {10.32614/CRAN.package.betaARMA},
-  url = {https://CRAN.R-project.org/package=betaARMA}
+  title   = {betaARMA: Beta Autoregressive Moving Average Models},
+  author  = {Costa, E. and Cribari-Neto, F. and Scher, V. T.},
+  year    = {2026},
+  note    = {R package version 1.2.0},
+  doi     = {10.32614/CRAN.package.betaARMA},
+  url     = {https://CRAN.R-project.org/package=betaARMA}
 }
 ```
 
@@ -282,7 +282,7 @@ If you use the ridge penalization (`penalty = TRUE`), please also cite:
 @Article{Cribari_Costa_Fonseca2025,
   title   = {Numerical stability enhancements in beta autoregressive moving
              average model estimation},
-  author  = {Francisco Cribari-Neto and Everton Costa and Rodney V. Fonseca},
+  author  = {Cribari-Neto, F. and Costa, E. and Fonseca, R. V.},
   journal = {Brazilian Journal of Probability and Statistics},
   year    = {2025},
   volume  = {39},
@@ -296,16 +296,16 @@ If your application involves hydro-environmental modeling, please consider citin
 
 ```bibtex
 @Article{Costa_Cribari_Scher2024,
-  title     = {Test inferences and link function selection in dynamic beta 
-               modeling of seasonal hydro-environmental time series with 
-               temporary abnormal regimes},
-  author    = {Costa, E. and Cribari-Neto, F. and Scher, V. T.},
-  journal   = {Journal of Hydrology},
-  year      = {2024},
-  volume    = {638},
-  pages     = {131489}, 
-  year      = {2024},
-  doi       = {10.1016/j.jhydrol.2024.131489}
+  title   = {Test inferences and link function selection in dynamic beta
+             modeling of seasonal hydro-environmental time series with
+             temporary abnormal regimes},
+  author  = {Costa, E. and Cribari-Neto, F. and Scher, V. T.},
+  journal = {Journal of Hydrology},
+  year    = {2024},
+  volume  = {638},
+  pages   = {131489},
+  doi     = {10.1016/j.jhydrol.2024.131489}
+}
 ```
 
 ---
